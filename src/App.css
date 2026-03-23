@@ -1,0 +1,33 @@
+/* MQTTDash Profile Editor — app styles */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Widget delete button: hidden by default, shown on tile hover */
+.widget-delete-btn {
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+
+div:hover > .widget-delete-btn,
+.widget-delete-btn:focus {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Scrollbar styling for panels */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d0d0d0;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b0b0b0;
+}
