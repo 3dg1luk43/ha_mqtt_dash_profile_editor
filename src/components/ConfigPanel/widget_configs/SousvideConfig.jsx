@@ -3,24 +3,60 @@ export default function SousvideConfig({ widget, onChange }) {
     <div>
       <h3 style={sectionTitle}>Sous Vide</h3>
       <p style={{ fontSize: 11, color: '#888', marginBottom: 10, lineHeight: 1.4 }}>
-        Displays current temperature (top, large) and time remaining in HH:MM (below).
-        Off-state (off / unavailable) dims the tile to 40%.
+        <code>entity_id</code> drives active state — value <strong>cooking</strong> activates the tile;
+        anything else (idle / off / unavailable) dims it.
       </p>
+
       <div style={{ marginBottom: 8 }}>
-        <label style={labelStyle}>State topic <span style={hint}>(temperature value)</span></label>
-        <input type="text" value={widget.state_topic ?? ''} onChange={(e) => onChange({ state_topic: e.target.value })} placeholder="home/sousvide/temperature" style={inputStyle} />
+        <label style={labelStyle}>Current temp entity <span style={hint}>(sensor.*)</span></label>
+        <input
+          type="text"
+          value={widget.temp_entity ?? ''}
+          onChange={(e) => onChange({ temp_entity: e.target.value })}
+          placeholder="sensor.sv_temperature"
+          list="entity-autocomplete"
+          style={inputStyle}
+        />
       </div>
+
       <div style={{ marginBottom: 8 }}>
-        <label style={labelStyle}>Time topic <span style={hint}>(minutes remaining)</span></label>
-        <input type="text" value={widget.time_topic ?? ''} onChange={(e) => onChange({ time_topic: e.target.value })} placeholder="home/sousvide/time_remaining" style={inputStyle} />
+        <label style={labelStyle}>Target temp entity <span style={hint}>(sensor.*)</span></label>
+        <input
+          type="text"
+          value={widget.target_entity ?? ''}
+          onChange={(e) => onChange({ target_entity: e.target.value })}
+          placeholder="sensor.sv_target_temperature"
+          list="entity-autocomplete"
+          style={inputStyle}
+        />
       </div>
+
+      <div style={{ marginBottom: 8 }}>
+        <label style={labelStyle}>Time remaining entity <span style={hint}>(minutes → HH:MM)</span></label>
+        <input
+          type="text"
+          value={widget.time_entity ?? ''}
+          onChange={(e) => onChange({ time_entity: e.target.value })}
+          placeholder="sensor.sv_remaining_minutes"
+          list="entity-autocomplete"
+          style={inputStyle}
+        />
+      </div>
+
       <div style={{ marginBottom: 8 }}>
         <label style={labelStyle}>Unit</label>
-        <input type="text" value={widget.unit ?? '°C'} onChange={(e) => onChange({ unit: e.target.value })} placeholder="°C" style={{ ...inputStyle, width: 60 }} />
+        <input
+          type="text"
+          value={widget.unit ?? '°C'}
+          onChange={(e) => onChange({ unit: e.target.value })}
+          placeholder="°C"
+          style={{ ...inputStyle, width: 60 }}
+        />
       </div>
     </div>
   );
 }
+
 const sectionTitle = { fontSize: 13, fontWeight: 600, color: '#333', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' };
 const labelStyle = { fontSize: 11, color: '#666', display: 'block', marginBottom: 2 };
 const hint = { color: '#aaa', fontWeight: 400 };

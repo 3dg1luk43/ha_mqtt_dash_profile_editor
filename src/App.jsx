@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useEditorStore } from './store/editorStore';
 import { WIDGET_TYPES } from './data/widgetTypes';
-import { pixelToCell } from './utils/gridLayout';
+import { pixelToCell, tileGeometry } from './utils/gridLayout';
 import { getFrameDims } from './components/Canvas/GridCanvas';
 import { parseProfile, profileToState } from './utils/profileExport';
 
@@ -115,7 +115,7 @@ export default function App() {
   function dropCell(event) {
     // Use over.rect — the actual visual ClientRect of the scaled droppable frame div.
     // This is far more accurate than computing from canvasAreaRef which is the <main> element.
-    const { over, delta } = event;
+    const { over, delta, active } = event;
     if (!over) return null;
 
     const { frameW, frameH, bezelLeft, bezelTop } = getFrameDims(device, orientation);
@@ -133,8 +133,24 @@ export default function App() {
     const screenLeft = overRect.left + bezelLeft * scale;
     const screenTop  = overRect.top  + bezelTop  * scale;
 
-    const px = (finalX - screenLeft) / scale;
-    const py = (finalY - screenTop)  / scale;
+    let px = (finalX - screenLeft) / scale;
+    let py = (finalY - screenTop)  / scale;
+
+    // For move drags: offset by where within the widget the pointer grabbed,
+    // so the widget's top-left corner aligns to the drop cell (not the cursor).
+    const data = active?.data?.current;
+    if (data?.dragType === 'move') {
+      const wi = widgets.find((x) => x.id === data.widgetId);
+      if (wi) {
+        const pageGrid = pages[activePageIndex]?.grid ?? grid;
+        const geo = tileGeometry(wi, pageGrid);
+        const grabX = (event.activatorEvent.clientX - screenLeft) / scale - geo.left;
+        const grabY = (event.activatorEvent.clientY - screenTop)  / scale - geo.top;
+        px -= grabX;
+        py -= grabY;
+      }
+    }
+
     return pixelToCell(px, py, grid);
   }
 
