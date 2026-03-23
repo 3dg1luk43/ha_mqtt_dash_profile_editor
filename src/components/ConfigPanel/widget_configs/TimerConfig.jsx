@@ -57,6 +57,20 @@ export default function TimerConfig({ widget, onChange }) {
           </button>
         ))}
       </div>
+
+      <div style={{ marginTop: 10 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#555', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={widget.configurable !== false}
+            onChange={(e) => onChange({ configurable: e.target.checked ? undefined : false })}
+          />
+          Show +/− buttons
+        </label>
+        <p style={{ fontSize: 10, color: '#aaa', margin: '2px 0 0 20px' }}>
+          Uncheck to hide duration adjustment controls on the tile
+        </p>
+      </div>
     </div>
   );
 }

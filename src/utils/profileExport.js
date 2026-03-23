@@ -7,6 +7,7 @@ const WIDGET_EXTRA_KEYS = [
   'progress_unit', 'visible_rows',
   'default_seconds',  // timer
   'mealie_url', 'mealie_api_key', 'recipe_slug', 'visible_section',  // mealie
+  'configurable', 'time_topic', 'program_topic',  // timer configurable, sousvide/appliance
 ];
 
 function exportWidget(w) {

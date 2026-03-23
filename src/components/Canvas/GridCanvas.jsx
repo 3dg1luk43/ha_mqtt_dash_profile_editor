@@ -3,7 +3,7 @@ import { useEditorStore, effectiveGrid } from '../../store/editorStore';
 import DeviceFrame from './DeviceFrame';
 import GridOverlay from './GridOverlay';
 import WidgetTile from './WidgetTile';
-import { findOverlaps } from '../../utils/gridLayout';
+import { findOverlaps, tileGeometry } from '../../utils/gridLayout';
 
 export function getFrameDims(device, orientation) {
   // Use logical points — the coordinate system MQTTDash uses for layout.
@@ -18,7 +18,7 @@ export function getFrameDims(device, orientation) {
   return { screenW, screenH, frameW, frameH, bezelLeft: bezelSide, bezelTop };
 }
 
-export default function GridCanvas({ containerWidth, containerHeight }) {
+export default function GridCanvas({ containerWidth, containerHeight, dropPreview }) {
   const { grid, pages, activePageIndex, selectedWidgetId, selectWidget, resizeWidget, removeWidget, device, orientation } = useEditorStore();
 
   const activePage = pages[activePageIndex] ?? pages[0];
@@ -63,6 +63,23 @@ export default function GridCanvas({ containerWidth, containerHeight }) {
       >
         <DeviceFrame screenW={screenW} screenH={screenH} orientation={orientation}>
           <GridOverlay grid={pageGrid} width={screenW} height={screenH} />
+          {dropPreview && (() => {
+            const geo = tileGeometry(dropPreview, pageGrid);
+            return (
+              <div style={{
+                position: 'absolute',
+                left: geo.left,
+                top: geo.top,
+                width: geo.width,
+                height: geo.height,
+                background: 'rgba(79,195,247,0.18)',
+                border: '2px dashed #4fc3f7',
+                borderRadius: 6,
+                pointerEvents: 'none',
+                zIndex: 5,
+              }} />
+            );
+          })()}
           {widgets.map((w) => (
             <WidgetTile
               key={w.id}

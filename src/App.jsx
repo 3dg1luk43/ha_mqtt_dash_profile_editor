@@ -49,6 +49,7 @@ export default function App() {
   }, []);
   const entities = useEntityStore((s) => s.entities);
   const [activeItem, setActiveItem] = useState(null);
+  const [dropPreview, setDropPreview] = useState(null);
 
   function closeWelcome() {
     localStorage.setItem(WELCOME_KEY, '1');
@@ -84,6 +85,31 @@ export default function App() {
 
   function handleDragStart(event) {
     setActiveItem(event.active.data.current);
+    setDropPreview(null);
+  }
+
+  function handleDragMove(event) {
+    if (!event.over) { setDropPreview(null); return; }
+    const data = event.active.data.current;
+    if (!data) return;
+    const cell = dropCell(event);
+    if (!cell) { setDropPreview(null); return; }
+    let w = 1, h = 1;
+    if (data.dragType === 'move') {
+      const wi = widgets.find((x) => x.id === data.widgetId);
+      if (wi) { w = wi.w; h = wi.h; }
+    }
+    setDropPreview((prev) => {
+      if (prev?.x === cell.x && prev?.y === cell.y && prev?.w === w && prev?.h === h) return prev;
+      return { x: cell.x, y: cell.y, w, h };
+    });
+  }
+
+  function getCanvasScale() {
+    const { frameW, frameH } = getFrameDims(device, orientation);
+    const containerH = navIsVertical ? canvasSize.h : canvasSize.h - 40;
+    const containerW = navIsVertical ? canvasSize.w - 80 : canvasSize.w;
+    return Math.min(1, (containerH - 32) / frameH, (containerW - 32) / frameW);
   }
 
   function dropCell(event) {
@@ -114,6 +140,7 @@ export default function App() {
 
   function handleDragEnd(event) {
     setActiveItem(null);
+    setDropPreview(null);
     const { active, over } = event;
     if (!over) return;
 
@@ -143,28 +170,52 @@ export default function App() {
 
   function renderDragPreview() {
     if (!activeItem) return null;
+    const csScale = getCanvasScale();
+    const cellW = grid.widget_dimensions[0] * csScale;
+    const cellH = grid.widget_dimensions[1] * csScale;
+
+    let tileW, tileH, icon, label, bgColor, textColor;
+
     if (activeItem.dragType === 'new') {
-      const t = WIDGET_TYPES.find((w) => w.type === activeItem.widgetType);
-      return (
-        <div style={{ padding: '8px 14px', background: '#1a237e', color: '#fff', borderRadius: 6, fontSize: 13, opacity: 0.85, boxShadow: '0 4px 16px #0004' }}>
-          {t?.icon} {t?.label}
-        </div>
-      );
+      const t = WIDGET_TYPES.find((x) => x.type === activeItem.widgetType);
+      tileW = cellW; tileH = cellH;
+      icon = t?.icon ?? '?'; label = t?.label ?? activeItem.widgetType;
+      bgColor = '#23243a'; textColor = '#e0e0e0';
+    } else if (activeItem.dragType === 'move') {
+      const wi = widgets.find((x) => x.id === activeItem.widgetId);
+      if (!wi) return null;
+      const t = WIDGET_TYPES.find((x) => x.type === wi.type) ?? { icon: '?', label: wi.type };
+      tileW = wi.w * cellW; tileH = wi.h * cellH;
+      icon = t.icon; label = wi.label || wi.entity_id || t.label;
+      bgColor = wi.format?.bgColor || '#23243a';
+      textColor = wi.format?.textColor || '#e0e0e0';
+    } else {
+      return null;
     }
-    if (activeItem.dragType === 'move') {
-      const w = widgets.find((wi) => wi.id === activeItem.widgetId);
-      if (!w) return null;
-      return (
-        <div style={{ padding: '8px 14px', background: '#283593', color: '#fff', borderRadius: 6, fontSize: 12, opacity: 0.75, boxShadow: '0 4px 16px #0004' }}>
-          {w.label || w.entity_id || w.type}
-        </div>
-      );
-    }
-    return null;
+
+    return (
+      <div style={{
+        width: tileW, height: tileH,
+        background: bgColor,
+        borderRadius: 6,
+        border: '2px solid #4fc3f7',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        opacity: 0.82,
+        boxShadow: '0 4px 20px #0005',
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        padding: '4px 6px',
+        boxSizing: 'border-box',
+      }}>
+        <span style={{ fontSize: Math.max(12, cellH * 0.3), lineHeight: 1 }}>{icon}</span>
+        <span style={{ color: textColor, fontSize: Math.max(9, cellH * 0.12), marginTop: 2, textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>{label}</span>
+      </div>
+    );
   }
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#f0f2f5' }}>
         <Header onImport={() => setModal('import')} onExport={() => setModal('export')} onHelp={() => setShowWelcome(true)} />
         <DeviceSelector />
@@ -177,6 +228,7 @@ export default function App() {
             <GridCanvas
               containerWidth={navIsVertical ? canvasSize.w - 80 : canvasSize.w}
               containerHeight={navIsVertical ? canvasSize.h : canvasSize.h - 40}
+              dropPreview={dropPreview}
             />
             {navbar_edge === 'bottom' && <PageTabs />}
             {navbar_edge === 'right' && <PageTabs />}

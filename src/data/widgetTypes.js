@@ -146,6 +146,24 @@ export const WIDGET_TYPES = [
     format: true,
     extra: ['mealie_url', 'mealie_api_key', 'recipe_slug', 'visible_section'],
   },
+  {
+    type: 'sousvide',
+    label: 'Sous Vide',
+    icon: '♨️',
+    description: 'Displays current temperature and time remaining from a sous vide cooker',
+    fields: ['label', 'state_topic', 'time_topic', 'unit', 'format'],
+    format: true,
+    extra: ['state_topic', 'time_topic', 'unit'],
+  },
+  {
+    type: 'appliance',
+    label: 'Appliance',
+    icon: '🏠',
+    description: 'Shows on/off state, current program name, and time remaining',
+    fields: ['label', 'state_topic', 'program_topic', 'time_topic', 'format'],
+    format: true,
+    extra: ['state_topic', 'program_topic', 'time_topic'],
+  },
 ];
 
 // Common format fields for all widgets

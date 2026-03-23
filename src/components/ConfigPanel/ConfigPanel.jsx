@@ -14,6 +14,8 @@ import PrinterConfig from './widget_configs/PrinterConfig';
 import TimerConfig from './widget_configs/TimerConfig';
 import WebpageConfig from './widget_configs/WebpageConfig';
 import MealieConfig from './widget_configs/MealieConfig';
+import SousvideConfig from './widget_configs/SousvideConfig';
+import ApplianceConfig from './widget_configs/ApplianceConfig';
 
 const SENSOR_TYPES = ['sensor', 'value', 'person'];
 
@@ -91,11 +93,13 @@ function TypeConfig({ widget, onChange }) {
   if (t === 'timer') return <TimerConfig widget={widget} onChange={onChange} />;
   if (t === 'webpage') return <WebpageConfig widget={widget} onChange={onChange} />;
   if (t === 'mealie') return <MealieConfig widget={widget} onChange={onChange} />;
+  if (t === 'sousvide') return <SousvideConfig widget={widget} onChange={onChange} />;
+  if (t === 'appliance') return <ApplianceConfig widget={widget} onChange={onChange} />;
   return null;
 }
 
 function getIcon(type) {
-  const icons = { light: '💡', switch: '🔀', scene: '🎬', sensor: '📟', value: '🔢', person: '🧑', button: '🔘', label: '🏷️', clock: '⏰', weather: '🌦️', climate: '🌡️', camera: '📷', printer: '🖨️', timer: '⏱️', webpage: '🌐', mealie: '🍽️' };
+  const icons = { light: '💡', switch: '🔀', scene: '🎬', sensor: '📟', value: '🔢', person: '🧑', button: '🔘', label: '🏷️', clock: '⏰', weather: '🌦️', climate: '🌡️', camera: '📷', printer: '🖨️', timer: '⏱️', webpage: '🌐', mealie: '🍽️', sousvide: '♨️', appliance: '🏠' };
   return icons[type] ?? '?';
 }
 
