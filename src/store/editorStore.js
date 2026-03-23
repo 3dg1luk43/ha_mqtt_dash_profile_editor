@@ -38,6 +38,7 @@ export const useEditorStore = create(
       activePageIndex: 0,
       selectedWidgetId: null,
       banner: '',
+      navbar_edge: 'bottom',
       history: [],
       future: [],
 
@@ -164,6 +165,7 @@ export const useEditorStore = create(
 
       // ── Misc ──────────────────────────────────────────────────────────────
       setBanner: (banner) => set({ banner }),
+      setNavbarEdge: (navbar_edge) => set({ navbar_edge }),
       setWidgets: (widgets) => set((s) => ({  // used by import — replaces active page widgets
         pages: s.pages.map((p, i) => i === s.activePageIndex ? { ...p, widgets } : p),
       })),
@@ -197,6 +199,7 @@ export const useEditorStore = create(
         activePageIndex: 0,
         selectedWidgetId: null,
         banner: '',
+        navbar_edge: 'bottom',
         history: [],
         future: [],
       }),
@@ -209,6 +212,7 @@ export const useEditorStore = create(
         grid: s.grid,
         pages: s.pages,
         banner: s.banner,
+        navbar_edge: s.navbar_edge,
       }),
       merge: (persisted, current) => {
         const merged = { ...current, ...persisted };

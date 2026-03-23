@@ -1,7 +1,9 @@
 import { useEditorStore, effectiveGrid } from '../../store/editorStore';
 
+const NAVBAR_EDGES = ['top', 'bottom', 'left', 'right'];
+
 export default function GridConfigSection() {
-  const { grid, banner, setBanner, setGridConfig, setPageGrid, device, orientation, pages, activePageIndex } = useEditorStore();
+  const { grid, banner, setBanner, setGridConfig, setPageGrid, setNavbarEdge, navbar_edge, device, orientation, pages, activePageIndex } = useEditorStore();
 
   const activePage = pages[activePageIndex];
   const hasPageOverride = !!activePage?.grid;
@@ -59,6 +61,25 @@ export default function GridConfigSection() {
           </span>
         </label>
       </div>
+
+      <Field label="Navbar edge">
+        <div style={{ display: 'flex', gap: 3 }}>
+          {NAVBAR_EDGES.map((edge) => (
+            <button
+              key={edge}
+              onClick={() => setNavbarEdge(edge)}
+              style={{
+                fontSize: 11, padding: '3px 7px', border: '1px solid #ccc', borderRadius: 4,
+                background: navbar_edge === edge ? '#1a237e' : '#f5f5f5',
+                color: navbar_edge === edge ? '#fff' : '#555',
+                cursor: 'pointer', textTransform: 'capitalize',
+              }}
+            >
+              {edge}
+            </button>
+          ))}
+        </div>
+      </Field>
 
       <Field label="Banner text">
         <input

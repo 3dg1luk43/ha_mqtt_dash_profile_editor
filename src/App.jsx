@@ -4,6 +4,7 @@ import { useEditorStore } from './store/editorStore';
 import { WIDGET_TYPES } from './data/widgetTypes';
 import { pixelToCell } from './utils/gridLayout';
 import { getFrameDims } from './components/Canvas/GridCanvas';
+import { parseProfile, profileToState } from './utils/profileExport';
 
 import Header from './components/Header';
 import DeviceSelector from './components/DeviceSelector';
@@ -22,8 +23,27 @@ const WELCOME_KEY = 'mqttdash-welcomed-v1';
 export default function App() {
   const [modal, setModal] = useState(null);
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOME_KEY));
-  const { addWidget, moveWidget, pages, activePageIndex, grid, device, orientation, undo, redo } = useEditorStore();
+  const { addWidget, moveWidget, pages, activePageIndex, grid, device, orientation, navbar_edge, undo, redo, setGridConfig, setPages, setBanner, setNavbarEdge } = useEditorStore();
   const widgets = pages[activePageIndex]?.widgets ?? [];
+  const navIsVertical = navbar_edge === 'left' || navbar_edge === 'right';
+
+  // Auto-import shared profile from URL hash
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.startsWith('#profile=')) return;
+    try {
+      const json = decodeURIComponent(atob(hash.slice('#profile='.length)));
+      const result = parseProfile(json);
+      if (result.ok) {
+        const s = profileToState(result.data);
+        setGridConfig(s.grid);
+        setPages(s.pages);
+        setBanner(s.banner ?? '');
+        if (s.navbar_edge) setNavbarEdge(s.navbar_edge);
+      }
+    } catch (_) { /* ignore malformed share links */ }
+    history.replaceState(null, '', window.location.pathname);
+  }, []);
   const entities = useEntityStore((s) => s.entities);
   const [activeItem, setActiveItem] = useState(null);
 
@@ -148,9 +168,15 @@ export default function App() {
 
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           <WidgetPalette />
-          <main ref={canvasAreaRef} style={{ flex: 1, overflow: 'hidden', background: '#e4e7ef', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-            <GridCanvas containerWidth={canvasSize.w} containerHeight={canvasSize.h - 40} />
-            <PageTabs />
+          <main ref={canvasAreaRef} style={{ flex: 1, overflow: 'hidden', background: '#e4e7ef', position: 'relative', display: 'flex', flexDirection: navIsVertical ? 'row' : 'column' }}>
+            {navbar_edge === 'top' && <PageTabs />}
+            {navbar_edge === 'left' && <PageTabs />}
+            <GridCanvas
+              containerWidth={navIsVertical ? canvasSize.w - 80 : canvasSize.w}
+              containerHeight={navIsVertical ? canvasSize.h : canvasSize.h - 40}
+            />
+            {navbar_edge === 'bottom' && <PageTabs />}
+            {navbar_edge === 'right' && <PageTabs />}
           </main>
           <ConfigPanel />
         </div>

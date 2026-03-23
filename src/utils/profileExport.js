@@ -48,6 +48,7 @@ export function buildProfile(state) {
   if (state.banner) profile.banner = state.banner;
 
   profile.ui = {
+    navbar_edge: state.navbar_edge ?? 'bottom',
     grid: exportGrid(state.grid),
     pages: (state.pages ?? []).map((page) => {
       const p = { name: page.name, widgets: page.widgets.map(exportWidget) };
@@ -100,7 +101,7 @@ export function profileToState(profile) {
       pages = [{ id: `page_${Date.now()}`, name: 'Main', widgets: [] }];
     }
 
-    return { banner: profile.banner ?? '', grid, pages };
+    return { banner: profile.banner ?? '', grid, pages, navbar_edge: ui.navbar_edge ?? 'bottom' };
   }
 
   // Old flat format: { banner, grid, widgets }

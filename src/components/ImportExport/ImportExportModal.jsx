@@ -17,12 +17,13 @@ function collectEntityIds(pages) {
 
 export default function ImportExportModal({ mode, onClose }) {
   const state = useEditorStore();
-  const { pages, setPages, setGridConfig, setBanner } = useEditorStore();
+  const { pages, setPages, setGridConfig, setBanner, setNavbarEdge } = useEditorStore();
 
   const [tab, setTab] = useState('paste');
   const [pasteValue, setPasteValue] = useState('');
   const [parseError, setParseError] = useState('');
   const [copyDone, setCopyDone] = useState(false);
+  const [shareDone, setShareDone] = useState(false);
   const [mirrorCopied, setMirrorCopied] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -33,6 +34,15 @@ export default function ImportExportModal({ mode, onClose }) {
     navigator.clipboard.writeText(profileJson).then(() => {
       setCopyDone(true);
       setTimeout(() => setCopyDone(false), 2000);
+    });
+  }
+
+  function handleShareLink() {
+    const b64 = btoa(encodeURIComponent(profileJson));
+    const url = `${window.location.origin}${window.location.pathname}#profile=${b64}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setShareDone(true);
+      setTimeout(() => setShareDone(false), 3000);
     });
   }
 
@@ -60,6 +70,7 @@ export default function ImportExportModal({ mode, onClose }) {
     setGridConfig(s.grid);
     setPages(s.pages);
     setBanner(s.banner ?? '');
+    if (s.navbar_edge) setNavbarEdge(s.navbar_edge);
     setParseError('');
     onClose();
   }
@@ -90,6 +101,9 @@ export default function ImportExportModal({ mode, onClose }) {
               </button>
               <button onClick={handleDownload} style={actionBtn('#37474f')}>
                 ⬇ Download .json
+              </button>
+              <button onClick={handleShareLink} style={actionBtn(shareDone ? '#4caf50' : '#0277bd')}>
+                {shareDone ? '✓ Link copied!' : '🔗 Share link'}
               </button>
             </div>
 

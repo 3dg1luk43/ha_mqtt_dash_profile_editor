@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useEditorStore } from '../store/editorStore';
 
 export default function Header({ onImport, onExport, onHelp }) {
-  const { widgets, device, banner, reset, undo, redo, history, future } = useEditorStore();
+  const { pages, device, banner, reset, undo, redo, history, future } = useEditorStore();
+  const widgetCount = pages?.reduce((n, p) => n + (p.widgets?.length ?? 0), 0) ?? 0;
   const [showReset, setShowReset] = useState(false);
 
   function handleReset() {
@@ -27,7 +28,7 @@ export default function Header({ onImport, onExport, onHelp }) {
       </span>
 
       <span style={{ fontSize: 12, color: '#90caf9', flex: 1 }}>
-        {widgets.length} widget{widgets.length !== 1 ? 's' : ''}
+        {widgetCount} widget{widgetCount !== 1 ? 's' : ''}
         {device && <> · {device.name}</>}
       </span>
 
