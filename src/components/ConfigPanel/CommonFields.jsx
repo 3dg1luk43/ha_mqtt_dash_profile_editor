@@ -35,6 +35,7 @@ export default function CommonFields({ widget, onChange }) {
         <Field label="Entity ID">
           <input
             type="text"
+            list="entity-autocomplete"
             value={widget.entity_id ?? ''}
             onChange={(e) => handleChange('entity_id', e.target.value)}
             style={inputStyle}

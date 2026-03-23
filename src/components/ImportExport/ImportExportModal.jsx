@@ -2,18 +2,32 @@ import { useState, useRef } from 'react';
 import { useEditorStore } from '../../store/editorStore';
 import { buildProfile, parseProfile, profileToState } from '../../utils/profileExport';
 
-export default function ImportExportModal({ mode, onClose }) {
-  // mode: 'import' | 'export'
-  const state = useEditorStore();
-  const { setWidgets, setGridConfig, setBanner } = useEditorStore();
+/** Collect every unique entity_id referenced in the widget list. */
+function collectEntityIds(widgets) {
+  const ids = new Set();
+  const ENTITY_KEYS = ['entity_id', 'nozzle_entity', 'bed_entity', 'time_entity', 'progress_entity', 'status_entity'];
+  for (const w of widgets) {
+    for (const k of ENTITY_KEYS) {
+      if (w[k]) ids.add(w[k]);
+    }
+    if (w.overlay_button?.entity_id) ids.add(w.overlay_button.entity_id);
+  }
+  return [...ids].sort();
+}
 
-  const [tab, setTab] = useState('paste'); // 'paste' | 'file'
+export default function ImportExportModal({ mode, onClose }) {
+  const state = useEditorStore();
+  const { widgets, setWidgets, setGridConfig, setBanner } = useEditorStore();
+
+  const [tab, setTab] = useState('paste');
   const [pasteValue, setPasteValue] = useState('');
   const [parseError, setParseError] = useState('');
   const [copyDone, setCopyDone] = useState(false);
+  const [mirrorCopied, setMirrorCopied] = useState(false);
   const fileInputRef = useRef(null);
 
   const profileJson = mode === 'export' ? JSON.stringify(buildProfile(state), null, 2) : '';
+  const mirrorEntities = mode === 'export' ? collectEntityIds(widgets) : [];
 
   function handleCopy() {
     navigator.clipboard.writeText(profileJson).then(() => {
@@ -32,6 +46,13 @@ export default function ImportExportModal({ mode, onClose }) {
     URL.revokeObjectURL(url);
   }
 
+  function handleCopyMirrorList() {
+    navigator.clipboard.writeText(mirrorEntities.join('\n')).then(() => {
+      setMirrorCopied(true);
+      setTimeout(() => setMirrorCopied(false), 2000);
+    });
+  }
+
   function doImport(jsonStr) {
     const result = parseProfile(jsonStr);
     if (!result.ok) { setParseError(result.error); return; }
@@ -41,10 +62,6 @@ export default function ImportExportModal({ mode, onClose }) {
     setBanner(s.banner ?? '');
     setParseError('');
     onClose();
-  }
-
-  function handlePasteImport() {
-    doImport(pasteValue);
   }
 
   function handleFileImport(e) {
@@ -58,7 +75,6 @@ export default function ImportExportModal({ mode, onClose }) {
   return (
     <div style={overlayStyle} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div style={modalStyle}>
-        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>
             {mode === 'export' ? '⬇ Export Profile' : '⬆ Import Profile'}
@@ -76,43 +92,56 @@ export default function ImportExportModal({ mode, onClose }) {
                 ⬇ Download .json
               </button>
             </div>
+
             <pre style={{
-              background: '#1e1e2e',
-              color: '#cdd6f4',
-              padding: 12,
-              borderRadius: 6,
-              fontSize: 11,
-              overflow: 'auto',
-              maxHeight: 400,
-              margin: 0,
-              fontFamily: 'monospace',
+              background: '#1e1e2e', color: '#cdd6f4', padding: 12, borderRadius: 6,
+              fontSize: 11, overflow: 'auto', maxHeight: 300, margin: 0, fontFamily: 'monospace',
             }}>
               {profileJson}
             </pre>
+
+            {/* Mirror checklist */}
+            {mirrorEntities.length > 0 && (
+              <div style={{ marginTop: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 600, margin: 0, color: '#333' }}>
+                    HA Mirror entities ({mirrorEntities.length})
+                  </h3>
+                  <button onClick={handleCopyMirrorList} style={actionBtn(mirrorCopied ? '#4caf50' : '#546e7a')}>
+                    {mirrorCopied ? '✓ Copied' : '📋 Copy list'}
+                  </button>
+                </div>
+                <p style={{ fontSize: 11, color: '#888', margin: '0 0 8px' }}>
+                  These entities are used in the profile. Configure them as mirrored entities in the HA integration.
+                  Not included in the exported JSON.
+                </p>
+                <div style={{ background: '#f8f9fa', borderRadius: 6, border: '1px solid #e8eaed', padding: '8px 10px' }}>
+                  {mirrorEntities.map((id) => {
+                    const domain = id.split('.')[0];
+                    return (
+                      <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0', borderBottom: '1px solid #f0f0f0' }}>
+                        <span style={{ fontSize: 10, color: '#fff', background: domainColor(domain), borderRadius: 3, padding: '1px 5px', fontWeight: 600, flexShrink: 0 }}>
+                          {domain}
+                        </span>
+                        <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#333' }}>{id}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </>
         )}
 
         {mode === 'import' && (
           <>
-            {/* Tabs */}
             <div style={{ display: 'flex', gap: 0, marginBottom: 12, borderBottom: '1px solid #e0e0e0' }}>
               {[['paste', '📋 Paste JSON'], ['file', '📁 Load file']].map(([t, lbl]) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  style={{
-                    padding: '6px 16px',
-                    fontSize: 13,
-                    border: 'none',
-                    background: 'none',
-                    cursor: 'pointer',
-                    borderBottom: tab === t ? '2px solid #1a237e' : '2px solid transparent',
-                    color: tab === t ? '#1a237e' : '#666',
-                    fontWeight: tab === t ? 600 : 400,
-                  }}
-                >
-                  {lbl}
-                </button>
+                <button key={t} onClick={() => setTab(t)} style={{
+                  padding: '6px 16px', fontSize: 13, border: 'none', background: 'none', cursor: 'pointer',
+                  borderBottom: tab === t ? '2px solid #1a237e' : '2px solid transparent',
+                  color: tab === t ? '#1a237e' : '#666', fontWeight: tab === t ? 600 : 400,
+                }}>{lbl}</button>
               ))}
             </div>
 
@@ -121,11 +150,11 @@ export default function ImportExportModal({ mode, onClose }) {
                 <textarea
                   value={pasteValue}
                   onChange={(e) => setPasteValue(e.target.value)}
-                  placeholder='Paste profile JSON here...'
+                  placeholder="Paste profile JSON here..."
                   rows={10}
                   style={{ width: '100%', boxSizing: 'border-box', fontSize: 12, padding: 8, border: '1px solid #ddd', borderRadius: 4, fontFamily: 'monospace', resize: 'vertical' }}
                 />
-                <button onClick={handlePasteImport} style={{ ...actionBtn('#1a237e'), marginTop: 8 }}>
+                <button onClick={() => doImport(pasteValue)} style={{ ...actionBtn('#1a237e'), marginTop: 8 }}>
                   Import
                 </button>
               </>
@@ -152,36 +181,20 @@ export default function ImportExportModal({ mode, onClose }) {
   );
 }
 
-const overlayStyle = {
-  position: 'fixed',
-  inset: 0,
-  background: 'rgba(0,0,0,0.4)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 1000,
-};
+const DOMAIN_COLORS = { light: '#f59e0b', switch: '#3b82f6', sensor: '#10b981', climate: '#ef4444', camera: '#8b5cf6', scene: '#ec4899', button: '#6366f1', person: '#14b8a6', weather: '#0ea5e9', printer: '#f97316' };
+function domainColor(domain) {
+  return DOMAIN_COLORS[domain] ?? '#94a3b8';
+}
 
+const overlayStyle = {
+  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+};
 const modalStyle = {
-  background: '#fff',
-  borderRadius: 10,
-  padding: 24,
-  width: 560,
-  maxWidth: '90vw',
-  maxHeight: '90vh',
-  overflow: 'auto',
+  background: '#fff', borderRadius: 10, padding: 24, width: 580,
+  maxWidth: '90vw', maxHeight: '90vh', overflow: 'auto',
   boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
 };
-
 function actionBtn(color) {
-  return {
-    padding: '7px 14px',
-    fontSize: 13,
-    fontWeight: 500,
-    borderRadius: 5,
-    border: 'none',
-    background: color,
-    color: '#fff',
-    cursor: 'pointer',
-  };
+  return { padding: '7px 14px', fontSize: 13, fontWeight: 500, borderRadius: 5, border: 'none', background: color, color: '#fff', cursor: 'pointer' };
 }

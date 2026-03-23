@@ -43,7 +43,7 @@ export default function CameraConfig({ widget, onChange }) {
       </div>
       <div style={{ marginBottom: 6 }}>
         <label style={labelStyle}>Entity ID</label>
-        <input type="text" value={overlay.entity_id ?? ''} onChange={(e) => setOverlay('entity_id', e.target.value)} placeholder="light.camera_light" style={inputStyle} />
+        <input type="text" list="entity-autocomplete" value={overlay.entity_id ?? ''} onChange={(e) => setOverlay('entity_id', e.target.value)} placeholder="light.camera_light" style={inputStyle} />
       </div>
       <div style={{ marginBottom: 6 }}>
         <label style={labelStyle}>Action</label>

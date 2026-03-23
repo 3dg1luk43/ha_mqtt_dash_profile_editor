@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useEditorStore } from '../store/editorStore';
 
-export default function Header({ onImport, onExport }) {
+export default function Header({ onImport, onExport, onHelp }) {
   const { widgets, device, banner, reset, undo, redo, history, future } = useEditorStore();
   const [showReset, setShowReset] = useState(false);
 
@@ -49,6 +49,10 @@ export default function Header({ onImport, onExport }) {
 
       <button onClick={onImport} style={btnStyle(true)}>⬆ Import</button>
       <button onClick={onExport} style={btnStyle(true, '#4caf50')}>⬇ Export</button>
+
+      <div style={{ width: 1, height: 24, background: '#3949ab' }} />
+
+      <button onClick={onHelp} title="Help / Tutorial" style={btnStyle(true, '#5c6bc0')}>? Help</button>
 
       <div style={{ width: 1, height: 24, background: '#3949ab' }} />
 

@@ -25,6 +25,7 @@ export default function PrinterConfig({ widget, onChange }) {
           <label style={labelStyle}>{label}</label>
           <input
             type="text"
+            list="entity-autocomplete"
             value={widget[key] ?? ''}
             onChange={(e) => onChange({ [key]: e.target.value })}
             placeholder="sensor...."

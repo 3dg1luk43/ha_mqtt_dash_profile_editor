@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useEditorStore } from '../../store/editorStore';
 import GridConfigSection from './GridConfigSection';
+import EntityManager from './EntityManager';
 import CommonFields from './CommonFields';
 import FormatFields from './FormatFields';
 import SensorConfig from './widget_configs/SensorConfig';
@@ -15,13 +17,10 @@ const SENSOR_TYPES = ['sensor', 'value', 'person'];
 export default function ConfigPanel() {
   const { widgets, selectedWidgetId, updateWidget } = useEditorStore();
   const selected = widgets.find((w) => w.id === selectedWidgetId);
+  const [noSelTab, setNoSelTab] = useState('grid'); // 'grid' | 'entities'
 
   function handleChange(patch) {
     if (selected) updateWidget(selected.id, patch);
-  }
-
-  function handleFormatChange(format) {
-    handleChange({ format });
   }
 
   return (
@@ -44,17 +43,32 @@ export default function ConfigPanel() {
         )}
       </div>
 
+      {/* Tab bar — only when no widget selected */}
+      {!selected && (
+        <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+          {[['grid', '⚙ Grid'], ['entities', '🗂 Entities']].map(([t, lbl]) => (
+            <button key={t} onClick={() => setNoSelTab(t)} style={{
+              flex: 1, padding: '7px 0', fontSize: 12, border: 'none', background: 'none', cursor: 'pointer',
+              borderBottom: noSelTab === t ? '2px solid #1a237e' : '2px solid transparent',
+              color: noSelTab === t ? '#1a237e' : '#777', fontWeight: noSelTab === t ? 600 : 400,
+            }}>{lbl}</button>
+          ))}
+        </div>
+      )}
+
       <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
-        {!selected ? (
-          <GridConfigSection />
-        ) : (
+        {selected ? (
           <>
             <CommonFields widget={selected} onChange={handleChange} />
             <div style={divider} />
             <TypeConfig widget={selected} onChange={handleChange} />
             <div style={divider} />
-            <FormatFields format={selected.format} onChange={handleFormatChange} />
+            <FormatFields format={selected.format} onChange={(format) => handleChange({ format })} />
           </>
+        ) : noSelTab === 'grid' ? (
+          <GridConfigSection />
+        ) : (
+          <EntityManager />
         )}
       </div>
     </aside>
@@ -70,7 +84,7 @@ function TypeConfig({ widget, onChange }) {
   if (t === 'climate') return <ClimateConfig widget={widget} onChange={onChange} />;
   if (t === 'camera') return <CameraConfig widget={widget} onChange={onChange} />;
   if (t === 'printer') return <PrinterConfig widget={widget} onChange={onChange} />;
-  return null; // light, switch, scene, button — no extra fields
+  return null;
 }
 
 function getIcon(type) {

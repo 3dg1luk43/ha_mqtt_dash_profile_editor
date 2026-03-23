@@ -11,13 +11,24 @@ import WidgetPalette from './components/WidgetPalette';
 import GridCanvas from './components/Canvas/GridCanvas';
 import ConfigPanel from './components/ConfigPanel/ConfigPanel';
 import ImportExportModal from './components/ImportExport/ImportExportModal';
+import WelcomeModal from './components/WelcomeModal';
+import { useEntityStore } from './store/entityStore';
 
 import './App.css';
 
+const WELCOME_KEY = 'mqttdash-welcomed-v1';
+
 export default function App() {
   const [modal, setModal] = useState(null);
+  const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOME_KEY));
   const { addWidget, moveWidget, widgets, grid, device, orientation, undo, redo } = useEditorStore();
+  const entities = useEntityStore((s) => s.entities);
   const [activeItem, setActiveItem] = useState(null);
+
+  function closeWelcome() {
+    localStorage.setItem(WELCOME_KEY, '1');
+    setShowWelcome(false);
+  }
 
   const canvasAreaRef = useRef(null);
   const [canvasSize, setCanvasSize] = useState({ w: 900, h: 700 });
@@ -130,7 +141,7 @@ export default function App() {
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#f0f2f5' }}>
-        <Header onImport={() => setModal('import')} onExport={() => setModal('export')} />
+        <Header onImport={() => setModal('import')} onExport={() => setModal('export')} onHelp={() => setShowWelcome(true)} />
         <DeviceSelector />
 
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
@@ -144,6 +155,12 @@ export default function App() {
 
       <DragOverlay>{renderDragPreview()}</DragOverlay>
       {modal && <ImportExportModal mode={modal} onClose={() => setModal(null)} />}
+      {showWelcome && <WelcomeModal onClose={closeWelcome} />}
+
+      {/* Global entity autocomplete list — referenced by all entity_id inputs */}
+      <datalist id="entity-autocomplete">
+        {entities.map((e) => <option key={e} value={e} />)}
+      </datalist>
     </DndContext>
   );
 }
