@@ -53,7 +53,7 @@ export default function DeviceFrame({ screenW, screenH, orientation = 'portrait'
         height: homeSize,
         borderRadius: '50%',
         background: '#1a1a1a',
-        border: `${2 * physScale}px solid #555`,
+        border: `2px solid #555`,
         boxShadow: '0 0 0 2px #333 inset',
       }} />
 
