@@ -5,7 +5,9 @@ import { DEVICE_MODELS } from '../data/deviceModels';
 const defaultDevice = DEVICE_MODELS[0];
 
 function autoCell(device, orientation, columns, prevCellH) {
-  const [pw, ph] = device.pixels;
+  // MQTTDash lays out in UIKit logical points, not physical pixels.
+  // All iPads share the same 768×1024 pt logical canvas regardless of Retina scale.
+  const [pw, ph] = device.points ?? [768, 1024];
   const screenW = orientation === 'landscape' ? ph : pw;
   const cellW = Math.floor(screenW / columns);
   return [cellW, prevCellH ?? cellW];
@@ -205,7 +207,7 @@ export const useEditorStore = create(
       }),
     }),
     {
-      name: 'mqttdash-editor-v3',
+      name: 'mqttdash-editor-v4',
       partialize: (s) => ({
         device: s.device,
         orientation: s.orientation,

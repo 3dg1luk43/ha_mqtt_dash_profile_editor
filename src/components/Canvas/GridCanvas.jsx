@@ -6,12 +6,13 @@ import WidgetTile from './WidgetTile';
 import { findOverlaps } from '../../utils/gridLayout';
 
 export function getFrameDims(device, orientation) {
-  const [pw, ph] = device.pixels;
+  // Use logical points — the coordinate system MQTTDash uses for layout.
+  // All iPads are 768×1024 pt; bezel is a fixed pt value (approx real physical size).
+  const [pw, ph] = device.points ?? [768, 1024];
   const [screenW, screenH] = orientation === 'landscape' ? [ph, pw] : [pw, ph];
-  const physScale = device.scale ?? Math.max(1, Math.round(pw / 768));
-  const bezelSide = (orientation === 'landscape' ? 80 : 40) * physScale;
-  const bezelTop  = (orientation === 'landscape' ? 40 : 80) * physScale;
-  const bezelBot  = (orientation === 'landscape' ? 40 : 80) * physScale;
+  const bezelSide = orientation === 'landscape' ? 50 : 32;
+  const bezelTop  = orientation === 'landscape' ? 32 : 50;
+  const bezelBot  = orientation === 'landscape' ? 32 : 50;
   const frameW = screenW + 2 * bezelSide;
   const frameH = screenH + bezelTop + bezelBot;
   return { screenW, screenH, frameW, frameH, bezelLeft: bezelSide, bezelTop };
@@ -60,7 +61,7 @@ export default function GridCanvas({ containerWidth, containerHeight }) {
         }}
         onClick={() => selectWidget(null)}
       >
-        <DeviceFrame screenW={screenW} screenH={screenH} orientation={orientation} device={device}>
+        <DeviceFrame screenW={screenW} screenH={screenH} orientation={orientation}>
           <GridOverlay grid={pageGrid} width={screenW} height={screenH} />
           {widgets.map((w) => (
             <WidgetTile

@@ -10,7 +10,7 @@ export default function GridConfigSection() {
   // The grid being edited: page override if active, else top-level
   const displayGrid = effectiveGrid(grid, activePage);
 
-  const [pw, ph] = device.pixels;
+  const [pw, ph] = device.points ?? [768, 1024];
   const [screenW, screenH] = orientation === 'landscape' ? [ph, pw] : [pw, ph];
   const autoW = Math.floor(screenW / displayGrid.columns);
   const colsFit = Math.floor(screenW / displayGrid.widget_dimensions[0]);

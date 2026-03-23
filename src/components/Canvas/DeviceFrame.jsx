@@ -1,18 +1,18 @@
 // CSS-rendered iPad frame (home-button era).
-// Accepts physical pixel screen dimensions and scales bezel accordingly.
+// screenW/screenH are in logical points (same for all iPads: 768×1024).
 
-export default function DeviceFrame({ screenW, screenH, orientation = 'portrait', device, children }) {
+export default function DeviceFrame({ screenW, screenH, orientation = 'portrait', children }) {
   const isLandscape = orientation === 'landscape';
-  const physScale = device?.scale ?? Math.max(1, Math.round(screenW / (isLandscape ? 1024 : 768)));
 
-  const bezelSide = (isLandscape ? 80 : 40) * physScale;
-  const bezelTop  = (isLandscape ? 40 : 80) * physScale;
-  const bezelBot  = (isLandscape ? 40 : 80) * physScale;
-  const radius    = 40 * physScale;
-  const homeSize  = 48 * physScale;
-  const homeOffset = 16 * physScale;
-  const camSize   = 8 * physScale;
-  const camOffset = 22 * physScale;
+  // Fixed bezel in logical points — matches getFrameDims
+  const bezelSide = isLandscape ? 50 : 32;
+  const bezelTop  = isLandscape ? 32 : 50;
+  const bezelBot  = isLandscape ? 32 : 50;
+  const radius    = 28;
+  const homeSize  = 36;
+  const homeOffset = 8;
+  const camSize   = 8;
+  const camOffset = 18;
 
   const frameW = screenW + 2 * bezelSide;
   const frameH = screenH + bezelTop + bezelBot;
