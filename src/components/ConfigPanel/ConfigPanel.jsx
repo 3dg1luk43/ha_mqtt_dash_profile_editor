@@ -17,7 +17,8 @@ import WebpageConfig from './widget_configs/WebpageConfig';
 const SENSOR_TYPES = ['sensor', 'value', 'person'];
 
 export default function ConfigPanel() {
-  const { widgets, selectedWidgetId, updateWidget } = useEditorStore();
+  const { pages, activePageIndex, selectedWidgetId, updateWidget } = useEditorStore();
+  const widgets = pages[activePageIndex]?.widgets ?? [];
   const selected = widgets.find((w) => w.id === selectedWidgetId);
   const [noSelTab, setNoSelTab] = useState('grid'); // 'grid' | 'entities'
 
