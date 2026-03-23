@@ -9,6 +9,7 @@ import Header from './components/Header';
 import DeviceSelector from './components/DeviceSelector';
 import WidgetPalette from './components/WidgetPalette';
 import GridCanvas from './components/Canvas/GridCanvas';
+import PageTabs from './components/Canvas/PageTabs';
 import ConfigPanel from './components/ConfigPanel/ConfigPanel';
 import ImportExportModal from './components/ImportExport/ImportExportModal';
 import WelcomeModal from './components/WelcomeModal';
@@ -21,7 +22,8 @@ const WELCOME_KEY = 'mqttdash-welcomed-v1';
 export default function App() {
   const [modal, setModal] = useState(null);
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOME_KEY));
-  const { addWidget, moveWidget, widgets, grid, device, orientation, undo, redo } = useEditorStore();
+  const { addWidget, moveWidget, pages, activePageIndex, grid, device, orientation, undo, redo } = useEditorStore();
+  const widgets = pages[activePageIndex]?.widgets ?? [];
   const entities = useEntityStore((s) => s.entities);
   const [activeItem, setActiveItem] = useState(null);
 
@@ -146,8 +148,9 @@ export default function App() {
 
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           <WidgetPalette />
-          <main ref={canvasAreaRef} style={{ flex: 1, overflow: 'hidden', background: '#e4e7ef', position: 'relative' }}>
-            <GridCanvas containerWidth={canvasSize.w} containerHeight={canvasSize.h} />
+          <main ref={canvasAreaRef} style={{ flex: 1, overflow: 'hidden', background: '#e4e7ef', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+            <GridCanvas containerWidth={canvasSize.w} containerHeight={canvasSize.h - 40} />
+            <PageTabs />
           </main>
           <ConfigPanel />
         </div>

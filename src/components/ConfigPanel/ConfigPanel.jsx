@@ -11,6 +11,8 @@ import WeatherConfig from './widget_configs/WeatherConfig';
 import ClimateConfig from './widget_configs/ClimateConfig';
 import CameraConfig from './widget_configs/CameraConfig';
 import PrinterConfig from './widget_configs/PrinterConfig';
+import TimerConfig from './widget_configs/TimerConfig';
+import WebpageConfig from './widget_configs/WebpageConfig';
 
 const SENSOR_TYPES = ['sensor', 'value', 'person'];
 
@@ -84,11 +86,13 @@ function TypeConfig({ widget, onChange }) {
   if (t === 'climate') return <ClimateConfig widget={widget} onChange={onChange} />;
   if (t === 'camera') return <CameraConfig widget={widget} onChange={onChange} />;
   if (t === 'printer') return <PrinterConfig widget={widget} onChange={onChange} />;
+  if (t === 'timer') return <TimerConfig widget={widget} onChange={onChange} />;
+  if (t === 'webpage') return <WebpageConfig widget={widget} onChange={onChange} />;
   return null;
 }
 
 function getIcon(type) {
-  const icons = { light: '💡', switch: '🔀', scene: '🎬', sensor: '📟', value: '🔢', person: '🧑', button: '🔘', label: '🏷️', clock: '⏰', weather: '🌦️', climate: '🌡️', camera: '📷', printer: '🖨️' };
+  const icons = { light: '💡', switch: '🔀', scene: '🎬', sensor: '📟', value: '🔢', person: '🧑', button: '🔘', label: '🏷️', clock: '⏰', weather: '🌦️', climate: '🌡️', camera: '📷', printer: '🖨️', timer: '⏱️', webpage: '🌐' };
   return icons[type] ?? '?';
 }
 

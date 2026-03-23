@@ -2,22 +2,22 @@ import { useState, useRef } from 'react';
 import { useEditorStore } from '../../store/editorStore';
 import { buildProfile, parseProfile, profileToState } from '../../utils/profileExport';
 
-/** Collect every unique entity_id referenced in the widget list. */
-function collectEntityIds(widgets) {
+/** Collect every unique entity_id from all pages. */
+function collectEntityIds(pages) {
   const ids = new Set();
   const ENTITY_KEYS = ['entity_id', 'nozzle_entity', 'bed_entity', 'time_entity', 'progress_entity', 'status_entity'];
-  for (const w of widgets) {
-    for (const k of ENTITY_KEYS) {
-      if (w[k]) ids.add(w[k]);
+  for (const page of (pages ?? [])) {
+    for (const w of (page.widgets ?? [])) {
+      for (const k of ENTITY_KEYS) { if (w[k]) ids.add(w[k]); }
+      if (w.overlay_button?.entity_id) ids.add(w.overlay_button.entity_id);
     }
-    if (w.overlay_button?.entity_id) ids.add(w.overlay_button.entity_id);
   }
   return [...ids].sort();
 }
 
 export default function ImportExportModal({ mode, onClose }) {
   const state = useEditorStore();
-  const { widgets, setWidgets, setGridConfig, setBanner } = useEditorStore();
+  const { pages, setPages, setGridConfig, setBanner } = useEditorStore();
 
   const [tab, setTab] = useState('paste');
   const [pasteValue, setPasteValue] = useState('');
@@ -27,7 +27,7 @@ export default function ImportExportModal({ mode, onClose }) {
   const fileInputRef = useRef(null);
 
   const profileJson = mode === 'export' ? JSON.stringify(buildProfile(state), null, 2) : '';
-  const mirrorEntities = mode === 'export' ? collectEntityIds(widgets) : [];
+  const mirrorEntities = mode === 'export' ? collectEntityIds(pages) : [];
 
   function handleCopy() {
     navigator.clipboard.writeText(profileJson).then(() => {
@@ -58,7 +58,7 @@ export default function ImportExportModal({ mode, onClose }) {
     if (!result.ok) { setParseError(result.error); return; }
     const s = profileToState(result.data);
     setGridConfig(s.grid);
-    setWidgets(s.widgets);
+    setPages(s.pages);
     setBanner(s.banner ?? '');
     setParseError('');
     onClose();

@@ -44,10 +44,17 @@ export default function WidgetTile({ widget, grid, isSelected, hasOverlap, onSel
 
   // Background from format
   const fmt = widget.format ?? {};
-  const bgColor = fmt.bgColor || '#23243a';
+  let bgColor = fmt.bgColor || '#23243a';
   const textColor = fmt.textColor || '#e0e0e0';
   const textSize = fmt.textSize ? `${fmt.textSize}px` : '14px';
   const align = fmt.align || 'center';
+
+  // Climate: tint the whole tile with the "off" state color at 25% opacity (preview hint)
+  let climateTint = null;
+  if (widget.type === 'climate' && widget.state_formats) {
+    const offFmt = widget.state_formats.off ?? Object.values(widget.state_formats)[0];
+    if (offFmt?.bgColor) climateTint = offFmt.bgColor;
+  }
 
   return (
     <div
@@ -61,7 +68,9 @@ export default function WidgetTile({ widget, grid, isSelected, hasOverlap, onSel
         top: geo.top,
         width: geo.width,
         height: geo.height,
-        background: bgColor,
+        background: climateTint
+          ? `linear-gradient(${climateTint}40, ${climateTint}40), ${bgColor}`
+          : bgColor,
         borderRadius: 6,
         border: isSelected
           ? '2px solid #4fc3f7'

@@ -1,36 +1,31 @@
 import { useDroppable } from '@dnd-kit/core';
-import { useEditorStore } from '../../store/editorStore';
+import { useEditorStore, effectiveGrid } from '../../store/editorStore';
 import DeviceFrame from './DeviceFrame';
 import GridOverlay from './GridOverlay';
 import WidgetTile from './WidgetTile';
 import { findOverlaps } from '../../utils/gridLayout';
 
-/**
- * Returns screen pixel dimensions and frame outer dimensions for the given device + orientation.
- * Always uses device.pixels (physical resolution), not logical points.
- */
 export function getFrameDims(device, orientation) {
   const [pw, ph] = device.pixels;
   const [screenW, screenH] = orientation === 'landscape' ? [ph, pw] : [pw, ph];
-
-  // Bezel scales with the device's pixel density so it looks proportional
   const physScale = device.scale ?? Math.max(1, Math.round(pw / 768));
   const bezelSide = (orientation === 'landscape' ? 80 : 40) * physScale;
   const bezelTop  = (orientation === 'landscape' ? 40 : 80) * physScale;
   const bezelBot  = (orientation === 'landscape' ? 40 : 80) * physScale;
-
   const frameW = screenW + 2 * bezelSide;
   const frameH = screenH + bezelTop + bezelBot;
-
   return { screenW, screenH, frameW, frameH, bezelLeft: bezelSide, bezelTop };
 }
 
 export default function GridCanvas({ containerWidth, containerHeight }) {
-  const { grid, widgets, selectedWidgetId, selectWidget, resizeWidget, removeWidget, device, orientation } = useEditorStore();
+  const { grid, pages, activePageIndex, selectedWidgetId, selectWidget, resizeWidget, removeWidget, device, orientation } = useEditorStore();
+
+  const activePage = pages[activePageIndex] ?? pages[0];
+  const widgets = activePage?.widgets ?? [];
+  const pageGrid = effectiveGrid(grid, activePage);
 
   const { screenW, screenH, frameW, frameH } = getFrameDims(device, orientation);
 
-  // Scale frame to fit container — constrain by both axes with padding
   const scaleH = (containerHeight - 32) / frameH;
   const scaleW = (containerWidth - 32) / frameW;
   const scale = Math.min(1, scaleH, scaleW);
@@ -66,12 +61,12 @@ export default function GridCanvas({ containerWidth, containerHeight }) {
         onClick={() => selectWidget(null)}
       >
         <DeviceFrame screenW={screenW} screenH={screenH} orientation={orientation} device={device}>
-          <GridOverlay grid={grid} width={screenW} height={screenH} />
+          <GridOverlay grid={pageGrid} width={screenW} height={screenH} />
           {widgets.map((w) => (
             <WidgetTile
               key={w.id}
               widget={w}
-              grid={grid}
+              grid={pageGrid}
               isSelected={w.id === selectedWidgetId}
               hasOverlap={overlappingIds.has(w.id)}
               onSelect={selectWidget}

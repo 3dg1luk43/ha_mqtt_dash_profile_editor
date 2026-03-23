@@ -119,6 +119,24 @@ export const WIDGET_TYPES = [
     format: true,
     extra: ['nozzle_entity', 'bed_entity', 'time_entity', 'progress_entity', 'status_entity', 'progress_unit', 'visible_rows'],
   },
+  {
+    type: 'timer',
+    label: 'Timer',
+    icon: '⏱️',
+    description: 'Local countdown timer — no entity, no MQTT',
+    fields: ['label', 'default_seconds', 'format'],
+    format: true,
+    extra: ['default_seconds'],
+  },
+  {
+    type: 'webpage',
+    label: 'Webpage',
+    icon: '🌐',
+    description: 'Embeds a web page in the tile',
+    fields: ['label', 'stream_url', 'format'],
+    format: true,
+    extra: ['stream_url'],
+  },
 ];
 
 // Common format fields for all widgets
