@@ -6,6 +6,7 @@ const WIDGET_EXTRA_KEYS = [
   'nozzle_entity', 'bed_entity', 'time_entity', 'progress_entity', 'status_entity',
   'progress_unit', 'visible_rows',
   'default_seconds',  // timer
+  'mealie_url', 'mealie_api_key', 'recipe_slug', 'visible_section',  // mealie
 ];
 
 function exportWidget(w) {

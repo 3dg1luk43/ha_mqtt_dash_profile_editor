@@ -137,6 +137,15 @@ export const WIDGET_TYPES = [
     format: true,
     extra: ['stream_url'],
   },
+  {
+    type: 'mealie',
+    label: 'Mealie',
+    icon: '🍽️',
+    description: 'Recipe browser / viewer from a self-hosted Mealie instance',
+    fields: ['label', 'mealie_url', 'mealie_api_key', 'recipe_slug', 'visible_section', 'format'],
+    format: true,
+    extra: ['mealie_url', 'mealie_api_key', 'recipe_slug', 'visible_section'],
+  },
 ];
 
 // Common format fields for all widgets

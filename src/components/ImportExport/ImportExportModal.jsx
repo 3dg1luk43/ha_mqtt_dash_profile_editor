@@ -38,7 +38,9 @@ export default function ImportExportModal({ mode, onClose }) {
   }
 
   function handleShareLink() {
-    const b64 = btoa(encodeURIComponent(profileJson));
+    // URL-safe base64: replace +/= chars that break URLs in email/Slack/etc.
+    const b64 = btoa(encodeURIComponent(profileJson))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     const url = `${window.location.origin}${window.location.pathname}#profile=${b64}`;
     navigator.clipboard.writeText(url).then(() => {
       setShareDone(true);

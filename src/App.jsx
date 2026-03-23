@@ -32,7 +32,10 @@ export default function App() {
     const hash = window.location.hash;
     if (!hash.startsWith('#profile=')) return;
     try {
-      const json = decodeURIComponent(atob(hash.slice('#profile='.length)));
+      // Reverse URL-safe base64: restore + and / then re-pad to multiple of 4
+      const raw = hash.slice('#profile='.length).replace(/-/g, '+').replace(/_/g, '/');
+      const padded = raw + '='.repeat((4 - raw.length % 4) % 4);
+      const json = decodeURIComponent(atob(padded));
       const result = parseProfile(json);
       if (result.ok) {
         const s = profileToState(result.data);
