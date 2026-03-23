@@ -8,6 +8,18 @@ export default function SousvideConfig({ widget, onChange }) {
       </p>
 
       <div style={{ marginBottom: 8 }}>
+        <label style={labelStyle}>Status entity <span style={hint}>(sensor.* — "cooking" activates tile)</span></label>
+        <input
+          type="text"
+          value={widget.entity_id ?? ''}
+          onChange={(e) => onChange({ entity_id: e.target.value })}
+          placeholder="sensor.sv_status"
+          list="entity-autocomplete"
+          style={inputStyle}
+        />
+      </div>
+
+      <div style={{ marginBottom: 8 }}>
         <label style={labelStyle}>Current temp entity <span style={hint}>(sensor.*)</span></label>
         <input
           type="text"

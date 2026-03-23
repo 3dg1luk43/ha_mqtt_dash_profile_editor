@@ -8,6 +8,18 @@ export default function ApplianceConfig({ widget, onChange }) {
       </p>
 
       <div style={{ marginBottom: 8 }}>
+        <label style={labelStyle}>Running state entity <span style={hint}>(off/idle/standby/unavail = dim)</span></label>
+        <input
+          type="text"
+          value={widget.entity_id ?? ''}
+          onChange={(e) => onChange({ entity_id: e.target.value })}
+          placeholder="sensor.washer_state"
+          list="entity-autocomplete"
+          style={inputStyle}
+        />
+      </div>
+
+      <div style={{ marginBottom: 8 }}>
         <label style={labelStyle}>Program entity <span style={hint}>(sensor.* — free text)</span></label>
         <input
           type="text"

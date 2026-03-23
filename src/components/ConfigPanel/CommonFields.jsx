@@ -31,7 +31,7 @@ export default function CommonFields({ widget, onChange }) {
           placeholder="Display name"
         />
       </Field>
-      {widget.type !== 'label' && widget.type !== 'clock' && (
+      {widget.type !== 'label' && widget.type !== 'clock' && widget.type !== 'sousvide' && widget.type !== 'appliance' && (
         <Field label="Entity ID">
           <input
             type="text"
