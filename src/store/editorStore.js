@@ -202,7 +202,7 @@ export const useEditorStore = create(
       }),
     }),
     {
-      name: 'mqttdash-editor-v2',
+      name: 'mqttdash-editor-v3',
       partialize: (s) => ({
         device: s.device,
         orientation: s.orientation,
@@ -210,6 +210,17 @@ export const useEditorStore = create(
         pages: s.pages,
         banner: s.banner,
       }),
+      merge: (persisted, current) => {
+        const merged = { ...current, ...persisted };
+        // Guard against missing or malformed pages from old data
+        if (!Array.isArray(merged.pages) || merged.pages.length === 0) {
+          merged.pages = current.pages;
+        }
+        if (typeof merged.activePageIndex !== 'number' || merged.activePageIndex >= merged.pages.length) {
+          merged.activePageIndex = 0;
+        }
+        return merged;
+      },
     }
   )
 );
