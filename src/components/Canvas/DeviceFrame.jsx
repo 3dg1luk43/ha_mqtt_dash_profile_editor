@@ -1,57 +1,59 @@
-// CSS-rendered iPad frame (home-button era)
-// Accepts actual screen dimensions — portrait or landscape.
+// CSS-rendered iPad frame (home-button era).
+// Accepts physical pixel screen dimensions and scales bezel accordingly.
 
-export default function DeviceFrame({ screenW, screenH, orientation = 'portrait', children }) {
+export default function DeviceFrame({ screenW, screenH, orientation = 'portrait', device, children }) {
   const isLandscape = orientation === 'landscape';
+  const physScale = device?.scale ?? Math.max(1, Math.round(screenW / (isLandscape ? 1024 : 768)));
 
-  // Bezel sizes (unscaled px)
-  const bezelSide = isLandscape ? 80 : 40;   // left/right bezel
-  const bezelTop = isLandscape ? 40 : 80;    // top bezel
-  const bezelBottom = isLandscape ? 40 : 80; // bottom bezel (contains home button)
-  const homeBezel = 80; // the side that has the home button
+  const bezelSide = (isLandscape ? 80 : 40) * physScale;
+  const bezelTop  = (isLandscape ? 40 : 80) * physScale;
+  const bezelBot  = (isLandscape ? 40 : 80) * physScale;
+  const radius    = 40 * physScale;
+  const homeSize  = 48 * physScale;
+  const homeOffset = 16 * physScale;
+  const camSize   = 8 * physScale;
+  const camOffset = 22 * physScale;
 
   const frameW = screenW + 2 * bezelSide;
-  const frameH = screenH + bezelTop + bezelBottom;
+  const frameH = screenH + bezelTop + bezelBot;
 
-  // Home button position
   const homeBtn = isLandscape
-    ? { right: 16, top: '50%', transform: 'translateY(-50%)', position: 'absolute' }
-    : { bottom: 16, left: '50%', transform: 'translateX(-50%)', position: 'absolute' };
+    ? { right: homeOffset, top: '50%', transform: 'translateY(-50%)', position: 'absolute' }
+    : { bottom: homeOffset, left: '50%', transform: 'translateX(-50%)', position: 'absolute' };
 
-  // Camera position
   const camera = isLandscape
-    ? { left: 16, top: '50%', transform: 'translateY(-50%)', position: 'absolute' }
-    : { top: 22, left: '50%', transform: 'translateX(-50%)', position: 'absolute' };
+    ? { left: camOffset, top: '50%', transform: 'translateY(-50%)', position: 'absolute' }
+    : { top: camOffset, left: '50%', transform: 'translateX(-50%)', position: 'absolute' };
 
   return (
     <div style={{ width: frameW, height: frameH, position: 'relative', flexShrink: 0 }}>
-      {/* Outer frame body */}
+      {/* Outer frame */}
       <div style={{
         position: 'absolute',
         inset: 0,
-        borderRadius: 40,
+        borderRadius: radius,
         background: '#2a2a2a',
         boxShadow: '0 8px 40px #0006, 0 0 0 2px #555 inset',
       }} />
 
-      {/* Camera dot */}
+      {/* Camera */}
       <div style={{
         ...camera,
-        width: 8,
-        height: 8,
+        width: camSize,
+        height: camSize,
         borderRadius: '50%',
         background: '#444',
-        border: '1px solid #666',
+        border: `1px solid #666`,
       }} />
 
       {/* Home button */}
       <div style={{
         ...homeBtn,
-        width: 48,
-        height: 48,
+        width: homeSize,
+        height: homeSize,
         borderRadius: '50%',
         background: '#1a1a1a',
-        border: '2px solid #555',
+        border: `${2 * physScale}px solid #555`,
         boxShadow: '0 0 0 2px #333 inset',
       }} />
 

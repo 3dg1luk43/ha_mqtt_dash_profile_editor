@@ -9,18 +9,20 @@ export default function DeviceSelector() {
     if (model) setDevice({ ...model });
   }
 
-  function handleCustomChange(axis, value) {
+  function handleCustomPixels(axis, value) {
     const v = parseInt(value, 10);
     if (isNaN(v) || v < 1) return;
     const updated = { ...device };
-    if (axis === 'w') updated.points = [v, device.points[1]];
-    if (axis === 'h') updated.points = [device.points[0], v];
+    updated.pixels = axis === 'w'
+      ? [v, device.pixels[1]]
+      : [device.pixels[0], v];
+    updated.scale = null; // unknown for custom
     setDevice(updated);
   }
 
   const [screenW, screenH] = orientation === 'landscape'
-    ? [device.points[1], device.points[0]]
-    : device.points;
+    ? [device.pixels[1], device.pixels[0]]
+    : device.pixels;
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px', background: '#f7f9fc', borderBottom: '1px solid #e8eaed', flexWrap: 'wrap' }}>
@@ -57,31 +59,29 @@ export default function DeviceSelector() {
         ))}
       </div>
 
-      {device.key !== 'custom' && (
-        <span style={{ fontSize: 11, color: '#888' }}>
-          {screenW}×{screenH}pt · {device.note}
-        </span>
-      )}
-
-      {device.key === 'custom' && (
+      {device.key === 'custom' ? (
         <>
           <input
             type="number"
-            value={device.points[0]}
-            onChange={(e) => handleCustomChange('w', e.target.value)}
-            style={{ width: 60, fontSize: 12, padding: '2px 4px', border: '1px solid #ccc', borderRadius: 4 }}
-            placeholder="Width"
+            value={device.pixels[0]}
+            onChange={(e) => handleCustomPixels('w', e.target.value)}
+            style={{ width: 64, fontSize: 12, padding: '2px 4px', border: '1px solid #ccc', borderRadius: 4 }}
+            placeholder="Width px"
           />
           <span style={{ fontSize: 12, color: '#666' }}>×</span>
           <input
             type="number"
-            value={device.points[1]}
-            onChange={(e) => handleCustomChange('h', e.target.value)}
-            style={{ width: 60, fontSize: 12, padding: '2px 4px', border: '1px solid #ccc', borderRadius: 4 }}
-            placeholder="Height"
+            value={device.pixels[1]}
+            onChange={(e) => handleCustomPixels('h', e.target.value)}
+            style={{ width: 64, fontSize: 12, padding: '2px 4px', border: '1px solid #ccc', borderRadius: 4 }}
+            placeholder="Height px"
           />
-          <span style={{ fontSize: 11, color: '#888' }}>pt · {screenW}×{screenH} ({orientation})</span>
+          <span style={{ fontSize: 11, color: '#888' }}>px — {screenW}×{screenH} ({orientation})</span>
         </>
+      ) : (
+        <span style={{ fontSize: 11, color: '#888' }}>
+          {screenW}×{screenH}px · {device.note}
+        </span>
       )}
     </div>
   );
