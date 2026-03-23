@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useEditorStore } from '../../store/editorStore';
 
-export default function PageTabs() {
+export default function PageTabs({ fill = false }) {
   const { pages, activePageIndex, navbar_edge, setActivePage, addPage, removePage, renamePage } = useEditorStore();
   const [editingIndex, setEditingIndex] = useState(null);
   const [editValue, setEditValue] = useState('');
@@ -29,8 +29,8 @@ export default function PageTabs() {
   }
 
   const barStyle = isVertical ? {
-    width: 80,
-    height: '100%',
+    width: fill ? '100%' : 80,
+    height: fill ? '100%' : '100%',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
@@ -41,7 +41,8 @@ export default function PageTabs() {
     flexShrink: 0,
     overflowY: 'auto',
   } : {
-    height: 40,
+    height: fill ? '100%' : 40,
+    width: fill ? '100%' : undefined,
     display: 'flex',
     alignItems: 'center',
     gap: 2,

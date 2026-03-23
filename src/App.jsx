@@ -10,7 +10,7 @@ import Header from './components/Header';
 import DeviceSelector from './components/DeviceSelector';
 import WidgetPalette from './components/WidgetPalette';
 import GridCanvas from './components/Canvas/GridCanvas';
-import PageTabs from './components/Canvas/PageTabs';
+import { getNavOffset } from './components/Canvas/GridCanvas';
 import ConfigPanel from './components/ConfigPanel/ConfigPanel';
 import ImportExportModal from './components/ImportExport/ImportExportModal';
 import WelcomeModal from './components/WelcomeModal';
@@ -25,7 +25,6 @@ export default function App() {
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOME_KEY));
   const { addWidget, moveWidget, pages, activePageIndex, grid, device, orientation, navbar_edge, undo, redo, setGridConfig, setPages, setBanner, setNavbarEdge } = useEditorStore();
   const widgets = pages[activePageIndex]?.widgets ?? [];
-  const navIsVertical = navbar_edge === 'left' || navbar_edge === 'right';
 
   // Auto-import shared profile from URL hash
   useEffect(() => {
@@ -107,45 +106,39 @@ export default function App() {
 
   function getCanvasScale() {
     const { frameW, frameH } = getFrameDims(device, orientation);
-    const containerH = navIsVertical ? canvasSize.h : canvasSize.h - 40;
-    const containerW = navIsVertical ? canvasSize.w - 80 : canvasSize.w;
-    return Math.min(1, (containerH - 32) / frameH, (containerW - 32) / frameW);
+    return Math.min(1, (canvasSize.h - 32) / frameH, (canvasSize.w - 32) / frameW);
   }
 
   function dropCell(event) {
     // Use over.rect — the actual visual ClientRect of the scaled droppable frame div.
-    // This is far more accurate than computing from canvasAreaRef which is the <main> element.
     const { over, delta, active } = event;
     if (!over) return null;
 
     const { frameW, frameH, bezelLeft, bezelTop } = getFrameDims(device, orientation);
-    const scaleH = (canvasSize.h - 32) / frameH;
-    const scaleW = (canvasSize.w - 32) / frameW;
-    const scale = Math.min(1, scaleH, scaleW);
+    const scale = Math.min(1, (canvasSize.h - 32) / frameH, (canvasSize.w - 32) / frameW);
 
-    // over.rect is the visual bounding box of the droppable div (the scaled frame)
     const overRect = over.rect;
     const finalX = (event.activatorEvent?.clientX ?? 0) + delta.x;
     const finalY = (event.activatorEvent?.clientY ?? 0) + delta.y;
 
-    // Screen inset starts at bezelLeft/bezelTop within the (unscaled) frame,
-    // so in scaled screen-space it's bezelLeft*scale from the frame visual left edge.
+    // Screen origin in screen-space
     const screenLeft = overRect.left + bezelLeft * scale;
     const screenTop  = overRect.top  + bezelTop  * scale;
 
-    let px = (finalX - screenLeft) / scale;
-    let py = (finalY - screenTop)  / scale;
+    // Nav bar offset: widget content area starts after the nav bar
+    const navOff = getNavOffset(navbar_edge);
+    let px = (finalX - screenLeft) / scale - navOff.x;
+    let py = (finalY - screenTop)  / scale - navOff.y;
 
-    // For move drags: offset by where within the widget the pointer grabbed,
-    // so the widget's top-left corner aligns to the drop cell (not the cursor).
+    // For move drags: offset by grab position so widget top-left aligns to drop cell.
     const data = active?.data?.current;
     if (data?.dragType === 'move') {
       const wi = widgets.find((x) => x.id === data.widgetId);
       if (wi) {
         const pageGrid = pages[activePageIndex]?.grid ?? grid;
         const geo = tileGeometry(wi, pageGrid);
-        const grabX = (event.activatorEvent.clientX - screenLeft) / scale - geo.left;
-        const grabY = (event.activatorEvent.clientY - screenTop)  / scale - geo.top;
+        const grabX = (event.activatorEvent.clientX - screenLeft) / scale - navOff.x - geo.left;
+        const grabY = (event.activatorEvent.clientY - screenTop)  / scale - navOff.y - geo.top;
         px -= grabX;
         py -= grabY;
       }
@@ -238,16 +231,12 @@ export default function App() {
 
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           <WidgetPalette />
-          <main ref={canvasAreaRef} style={{ flex: 1, overflow: 'hidden', background: '#e4e7ef', position: 'relative', display: 'flex', flexDirection: navIsVertical ? 'row' : 'column' }}>
-            {navbar_edge === 'top' && <PageTabs />}
-            {navbar_edge === 'left' && <PageTabs />}
+          <main ref={canvasAreaRef} style={{ flex: 1, overflow: 'hidden', background: '#e4e7ef', position: 'relative' }}>
             <GridCanvas
-              containerWidth={navIsVertical ? canvasSize.w - 80 : canvasSize.w}
-              containerHeight={navIsVertical ? canvasSize.h : canvasSize.h - 40}
+              containerWidth={canvasSize.w}
+              containerHeight={canvasSize.h}
               dropPreview={dropPreview}
             />
-            {navbar_edge === 'bottom' && <PageTabs />}
-            {navbar_edge === 'right' && <PageTabs />}
           </main>
           <ConfigPanel />
         </div>
