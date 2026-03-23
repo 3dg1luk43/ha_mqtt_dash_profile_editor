@@ -1,4 +1,5 @@
 import { useEditorStore, effectiveGrid } from '../../store/editorStore';
+import { NAV_H, NAV_W } from '../Canvas/GridCanvas';
 
 const NAVBAR_EDGES = ['top', 'bottom', 'left', 'right'];
 
@@ -12,9 +13,32 @@ export default function GridConfigSection() {
 
   const [pw, ph] = device.points ?? [768, 1024];
   const [screenW, screenH] = orientation === 'landscape' ? [ph, pw] : [pw, ph];
-  const autoW = Math.floor(screenW / displayGrid.columns);
-  const colsFit = Math.floor(screenW / displayGrid.widget_dimensions[0]);
-  const rowsFit = Math.floor(screenH / displayGrid.widget_dimensions[1]);
+
+  // Subtract nav bar from usable content area
+  const navIsVertical = navbar_edge === 'left' || navbar_edge === 'right';
+  const contentW = navIsVertical ? screenW - NAV_W : screenW;
+  const contentH = navIsVertical ? screenH : screenH - NAV_H;
+
+  const autoW = Math.floor(contentW / displayGrid.columns);
+  const autoH = Math.floor(contentH / displayGrid.columns); // square cells
+  const colsFit = Math.floor(contentW / displayGrid.widget_dimensions[0]);
+  const rowsFit = Math.floor(contentH / displayGrid.widget_dimensions[1]);
+
+  // Detect overflow: any widget whose right/bottom edge exceeds content area
+  const activeWidgets = activePage?.widgets ?? [];
+  const cellW = displayGrid.widget_dimensions[0];
+  const cellH = displayGrid.widget_dimensions[1];
+  const overflowX = activeWidgets.some((w) => (w.x + w.w) * cellW > contentW);
+  const overflowY = activeWidgets.some((w) => (w.y + w.h) * cellH > contentH);
+  const hasOverflow = overflowX || overflowY;
+
+  function fitToScreen() {
+    // Compute cell size so all columns fit in contentW, and all used rows fit in contentH
+    const maxRow = activeWidgets.reduce((m, w) => Math.max(m, w.y + w.h), displayGrid.columns);
+    const fitW = Math.floor(contentW / displayGrid.columns);
+    const fitH = Math.floor(contentH / maxRow);
+    patchGrid({ widget_dimensions: [fitW, fitH] });
+  }
 
   function num(val, fallback = 0) {
     const v = parseInt(val, 10);
@@ -40,10 +64,25 @@ export default function GridConfigSection() {
       <h3 style={sectionTitle}>Grid Settings</h3>
 
       {/* Screen info */}
-      <div style={{ background: '#f0f4ff', borderRadius: 5, padding: '6px 8px', marginBottom: 10, fontSize: 11, color: '#444' }}>
-        Screen: <strong>{screenW}×{screenH}px</strong>
-        {' · '}<strong>{colsFit} cols × {rowsFit} rows</strong> at current cell size
+      <div style={{ background: '#f0f4ff', borderRadius: 5, padding: '6px 8px', marginBottom: 8, fontSize: 11, color: '#444' }}>
+        Content area: <strong>{contentW}×{contentH}pt</strong>
+        {navbar_edge !== 'none' && <span style={{ color: '#888' }}> (nav {navIsVertical ? `−${NAV_W}pt wide` : `−${NAV_H}pt tall`})</span>}
+        <br />
+        <strong>{colsFit} cols × {rowsFit} rows</strong> fit at current cell size
       </div>
+
+      {/* Overflow warning + auto-fit */}
+      {hasOverflow && (
+        <div style={{ background: '#fff3e0', border: '1px solid #ffb74d', borderRadius: 5, padding: '6px 8px', marginBottom: 8, fontSize: 11, color: '#7a4100' }}>
+          ⚠ Widgets overflow the {overflowX && overflowY ? 'right and bottom edges' : overflowX ? 'right edge' : 'bottom edge'}.
+          <button
+            onClick={fitToScreen}
+            style={{ display: 'block', marginTop: 5, width: '100%', fontSize: 11, padding: '4px 0', border: '1px solid #ffb74d', borderRadius: 4, background: '#ff9800', color: '#fff', cursor: 'pointer', fontWeight: 600 }}
+          >
+            ↔↕ Auto-fit cells to screen
+          </button>
+        </div>
+      )}
 
       {/* Page grid override toggle */}
       <div style={{ background: hasPageOverride ? '#fff8e1' : '#f8f9fa', border: `1px solid ${hasPageOverride ? '#ffe082' : '#eee'}`, borderRadius: 5, padding: '6px 8px', marginBottom: 10 }}>
@@ -113,7 +152,7 @@ export default function GridConfigSection() {
           />
           <button
             onClick={() => patchGrid({ widget_dimensions: [autoW, displayGrid.widget_dimensions[1]] })}
-            title={`Set to ${autoW}px to fill screen width`}
+            title={`Set to ${autoW}pt to fill content width`}
             style={{ fontSize: 10, padding: '3px 6px', border: '1px solid #ccc', borderRadius: 4, background: '#fff', cursor: 'pointer', whiteSpace: 'nowrap', color: '#555' }}
           >
             ↔ Fill ({autoW})
