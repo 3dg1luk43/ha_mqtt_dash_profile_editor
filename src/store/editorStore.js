@@ -14,6 +14,7 @@ const defaultDevice = DEVICE_MODELS[0];
 
 export const useEditorStore = create((set, get) => ({
   device: defaultDevice,
+  orientation: 'portrait', // 'portrait' | 'landscape'
   grid: { ...defaultGrid },
   widgets: [],
   selectedWidgetId: null,
@@ -22,6 +23,7 @@ export const useEditorStore = create((set, get) => ({
   future: [],
 
   setDevice: (device) => set({ device }),
+  setOrientation: (orientation) => set({ orientation }),
   setGrid: (grid) => set({ grid }),
   setWidgets: (widgets) => set({ widgets }),
   setBanner: (banner) => set({ banner }),
@@ -79,6 +81,7 @@ export const useEditorStore = create((set, get) => ({
   }),
   reset: () => set({
     device: defaultDevice,
+    orientation: 'portrait',
     grid: { ...defaultGrid },
     widgets: [],
     selectedWidgetId: null,

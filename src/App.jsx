@@ -3,35 +3,36 @@ import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@
 import { useEditorStore } from './store/editorStore';
 import { WIDGET_TYPES } from './data/widgetTypes';
 import { pixelToCell } from './utils/gridLayout';
+import { getFrameDims } from './components/Canvas/GridCanvas';
 
 import Header from './components/Header';
 import DeviceSelector from './components/DeviceSelector';
 import WidgetPalette from './components/WidgetPalette';
-import GridCanvas, { FRAME_W, FRAME_H } from './components/Canvas/GridCanvas';
+import GridCanvas from './components/Canvas/GridCanvas';
 import ConfigPanel from './components/ConfigPanel/ConfigPanel';
 import ImportExportModal from './components/ImportExport/ImportExportModal';
 
 import './App.css';
 
 export default function App() {
-  const [modal, setModal] = useState(null); // 'import' | 'export' | null
-  const { addWidget, moveWidget, widgets, grid, undo, redo } = useEditorStore();
-  const [activeItem, setActiveItem] = useState(null); // { dragType, widgetType|widgetId }
+  const [modal, setModal] = useState(null);
+  const { addWidget, moveWidget, widgets, grid, device, orientation, undo, redo } = useEditorStore();
+  const [activeItem, setActiveItem] = useState(null);
 
   const canvasAreaRef = useRef(null);
-  const [canvasH, setCanvasH] = useState(700);
+  const [canvasSize, setCanvasSize] = useState({ w: 900, h: 700 });
 
-  // Measure canvas area height for iPad frame scaling
   useEffect(() => {
     if (!canvasAreaRef.current) return;
     const ro = new ResizeObserver((entries) => {
-      for (const e of entries) setCanvasH(e.contentRect.height);
+      for (const e of entries) {
+        setCanvasSize({ w: e.contentRect.width, h: e.contentRect.height });
+      }
     });
     ro.observe(canvasAreaRef.current);
     return () => ro.disconnect();
   }, []);
 
-  // Keyboard undo/redo
   useEffect(() => {
     function handler(e) {
       if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
@@ -49,37 +50,47 @@ export default function App() {
     setActiveItem(event.active.data.current);
   }
 
+  function dropCell(event) {
+    // Use over.rect — the actual visual ClientRect of the scaled droppable frame div.
+    // This is far more accurate than computing from canvasAreaRef which is the <main> element.
+    const { over, delta } = event;
+    if (!over) return null;
+
+    const { frameW, frameH, bezelLeft, bezelTop } = getFrameDims(device, orientation);
+    const scaleH = (canvasSize.h - 32) / frameH;
+    const scaleW = (canvasSize.w - 32) / frameW;
+    const scale = Math.min(1, scaleH, scaleW);
+
+    // over.rect is the visual bounding box of the droppable div (the scaled frame)
+    const overRect = over.rect;
+    const finalX = (event.activatorEvent?.clientX ?? 0) + delta.x;
+    const finalY = (event.activatorEvent?.clientY ?? 0) + delta.y;
+
+    // Screen inset starts at bezelLeft/bezelTop within the (unscaled) frame,
+    // so in scaled screen-space it's bezelLeft*scale from the frame visual left edge.
+    const screenLeft = overRect.left + bezelLeft * scale;
+    const screenTop  = overRect.top  + bezelTop  * scale;
+
+    const px = (finalX - screenLeft) / scale;
+    const py = (finalY - screenTop)  / scale;
+    return pixelToCell(px, py, grid);
+  }
+
   function handleDragEnd(event) {
     setActiveItem(null);
-    const { active, over, delta } = event;
+    const { active, over } = event;
     if (!over) return;
 
     const data = active.data.current;
     if (!data) return;
 
+    const cell = dropCell(event);
+    if (!cell) return;
+
     if (data.dragType === 'new') {
-      // Drop new widget from palette onto canvas
-      // Estimate drop cell from pointer position via delta
-      const canvasEl = canvasAreaRef.current;
-      if (!canvasEl) return;
-      const scale = Math.min(1, (canvasH - 32) / FRAME_H);
-      const rect = canvasEl.getBoundingClientRect();
-      const canvasX = event.activatorEvent?.clientX ?? 0;
-      const canvasY = event.activatorEvent?.clientY ?? 0;
-      const finalX = canvasX + delta.x;
-      const finalY = canvasY + delta.y;
-
-      // Screen origin within canvas div
-      const screenLeft = rect.left + 40 * scale;
-      const screenTop = rect.top + 80 * scale;
-      const px = (finalX - screenLeft) / scale;
-      const py = (finalY - screenTop) / scale;
-      const cell = pixelToCell(px, py, grid);
-
       const typeDef = WIDGET_TYPES.find((t) => t.type === data.widgetType);
-      const id = `${data.widgetType}_${Date.now()}`;
       addWidget({
-        id,
+        id: `${data.widgetType}_${Date.now()}`,
         type: data.widgetType,
         label: typeDef?.label ?? data.widgetType,
         entity_id: '',
@@ -90,41 +101,16 @@ export default function App() {
         format: {},
       });
     } else if (data.dragType === 'move') {
-      // Move existing widget
-      const w = widgets.find((wi) => wi.id === data.widgetId);
-      if (!w) return;
-      const canvasEl = canvasAreaRef.current;
-      if (!canvasEl) return;
-      const scale = Math.min(1, (canvasH - 32) / FRAME_H);
-      const rect = canvasEl.getBoundingClientRect();
-      const canvasX = event.activatorEvent?.clientX ?? 0;
-      const canvasY = event.activatorEvent?.clientY ?? 0;
-      const finalX = canvasX + delta.x;
-      const finalY = canvasY + delta.y;
-      const screenLeft = rect.left + 40 * scale;
-      const screenTop = rect.top + 80 * scale;
-      const px = (finalX - screenLeft) / scale;
-      const py = (finalY - screenTop) / scale;
-      const cell = pixelToCell(px, py, grid);
       moveWidget(data.widgetId, cell.x, cell.y);
     }
   }
 
-  // DragOverlay preview tile
   function renderDragPreview() {
     if (!activeItem) return null;
     if (activeItem.dragType === 'new') {
       const t = WIDGET_TYPES.find((w) => w.type === activeItem.widgetType);
       return (
-        <div style={{
-          padding: '8px 14px',
-          background: '#1a237e',
-          color: '#fff',
-          borderRadius: 6,
-          fontSize: 13,
-          opacity: 0.85,
-          boxShadow: '0 4px 16px #0004',
-        }}>
+        <div style={{ padding: '8px 14px', background: '#1a237e', color: '#fff', borderRadius: 6, fontSize: 13, opacity: 0.85, boxShadow: '0 4px 16px #0004' }}>
           {t?.icon} {t?.label}
         </div>
       );
@@ -133,15 +119,7 @@ export default function App() {
       const w = widgets.find((wi) => wi.id === activeItem.widgetId);
       if (!w) return null;
       return (
-        <div style={{
-          padding: '8px 14px',
-          background: '#283593',
-          color: '#fff',
-          borderRadius: 6,
-          fontSize: 12,
-          opacity: 0.75,
-          boxShadow: '0 4px 16px #0004',
-        }}>
+        <div style={{ padding: '8px 14px', background: '#283593', color: '#fff', borderRadius: 6, fontSize: 12, opacity: 0.75, boxShadow: '0 4px 16px #0004' }}>
           {w.label || w.entity_id || w.type}
         </div>
       );
@@ -157,24 +135,15 @@ export default function App() {
 
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           <WidgetPalette />
-
-          {/* Canvas area */}
-          <main
-            ref={canvasAreaRef}
-            style={{ flex: 1, overflow: 'hidden', background: '#e4e7ef', position: 'relative' }}
-          >
-            <GridCanvas containerHeight={canvasH} />
+          <main ref={canvasAreaRef} style={{ flex: 1, overflow: 'hidden', background: '#e4e7ef', position: 'relative' }}>
+            <GridCanvas containerWidth={canvasSize.w} containerHeight={canvasSize.h} />
           </main>
-
           <ConfigPanel />
         </div>
       </div>
 
       <DragOverlay>{renderDragPreview()}</DragOverlay>
-
-      {modal && (
-        <ImportExportModal mode={modal} onClose={() => setModal(null)} />
-      )}
+      {modal && <ImportExportModal mode={modal} onClose={() => setModal(null)} />}
     </DndContext>
   );
 }
