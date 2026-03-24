@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useEditorStore } from './store/editorStore';
+import { useHaStore } from './store/haStore';
 import { WIDGET_TYPES } from './data/widgetTypes';
 import { pixelToCell, tileGeometry } from './utils/gridLayout';
 import { getFrameDims } from './components/Canvas/GridCanvas';
 import { parseProfile, profileToState } from './utils/profileExport';
+import { handleOAuthCallback } from './utils/haAuth';
 
 import Header from './components/Header';
 import DeviceSelector from './components/DeviceSelector';
@@ -24,7 +26,9 @@ const WELCOME_KEY = 'mqttdash-welcomed-v1';
 export default function App() {
   const [modal, setModal] = useState(null);
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOME_KEY));
+  const [toast, setToast] = useState(null);
   const { addWidget, moveWidget, pages, activePageIndex, grid, device, orientation, navbar_edge, undo, redo, setGridConfig, setPages, setBanner, setNavbarEdge } = useEditorStore();
+  const haStore = useHaStore();
   const widgets = pages[activePageIndex]?.widgets ?? [];
 
   // Auto-import shared profile from URL hash
@@ -47,6 +51,30 @@ export default function App() {
     } catch (_) { /* ignore malformed share links */ }
     history.replaceState(null, '', window.location.pathname);
   }, []);
+
+  // Handle HA OAuth2 callback (?code=...&state=...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state');
+    if (!code || !state) return;
+    history.replaceState(null, '', window.location.pathname);
+    handleOAuthCallback(code, state)
+      .then(({ haUrl, access_token, refresh_token, expires_in }) => {
+        haStore.setHaUrl(haUrl);
+        haStore.setTokens({ accessToken: access_token, refreshToken: refresh_token, expiresIn: expires_in });
+        showToast('Connected to Home Assistant.');
+      })
+      .catch((err) => {
+        showToast(`HA connection failed: ${err.message}`, true);
+      });
+  }, []);
+
+  function showToast(msg, isError = false) {
+    setToast({ msg, isError });
+    setTimeout(() => setToast(null), 4000);
+  }
+
   const entities = useEntityStore((s) => s.entities);
   const [activeItem, setActiveItem] = useState(null);
   const [dropPreview, setDropPreview] = useState(null);
@@ -247,6 +275,17 @@ export default function App() {
       <DragOverlay>{renderDragPreview()}</DragOverlay>
       {modal && <ImportExportModal mode={modal} onClose={() => setModal(null)} />}
       {showWelcome && <WelcomeModal onClose={closeWelcome} />}
+
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          background: toast.isError ? '#c62828' : '#2e7d32', color: '#fff',
+          padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 500,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.25)', zIndex: 2000, pointerEvents: 'none',
+        }}>
+          {toast.msg}
+        </div>
+      )}
 
       {/* Global entity autocomplete list — referenced by all entity_id inputs */}
       <datalist id="entity-autocomplete">

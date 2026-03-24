@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
 import { useEditorStore } from '../../store/editorStore';
 import { buildProfile, parseProfile, profileToState } from '../../utils/profileExport';
+import { useHaStore } from '../../store/haStore';
+import { startOAuthFlow, sendProfile, refreshAccessToken } from '../../utils/haAuth';
 
 /** Collect every unique entity_id from all pages. */
 function collectEntityIds(pages) {
@@ -18,6 +20,7 @@ function collectEntityIds(pages) {
 export default function ImportExportModal({ mode, onClose }) {
   const state = useEditorStore();
   const { pages, setPages, setGridConfig, setBanner, setNavbarEdge } = useEditorStore();
+  const ha = useHaStore();
 
   const [tab, setTab] = useState('paste');
   const [pasteValue, setPasteValue] = useState('');
@@ -25,6 +28,9 @@ export default function ImportExportModal({ mode, onClose }) {
   const [copyDone, setCopyDone] = useState(false);
   const [shareDone, setShareDone] = useState(false);
   const [mirrorCopied, setMirrorCopied] = useState(false);
+  const [haUrlInput, setHaUrlInput] = useState(ha.haUrl || '');
+  const [haSending, setHaSending] = useState(false);
+  const [haResult, setHaResult] = useState(null); // { ok: bool, msg: string } | null
   const fileInputRef = useRef(null);
 
   const profileJson = mode === 'export' ? JSON.stringify(buildProfile(state), null, 2) : '';
@@ -56,6 +62,35 @@ export default function ImportExportModal({ mode, onClose }) {
     a.download = 'mqtt_dash_profile.json';
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  function handleConnectHA() {
+    const url = haUrlInput.trim();
+    if (!url) return;
+    ha.setHaUrl(url);
+    startOAuthFlow(url);
+  }
+
+  async function handleSendToHA() {
+    setHaSending(true);
+    setHaResult(null);
+    try {
+      let { accessToken, refreshToken, tokenExpires, haUrl, deviceId } = ha;
+      // Refresh token if expired or expiring within 60 seconds
+      if (!accessToken || Date.now() >= (tokenExpires ?? 0) - 60_000) {
+        if (!refreshToken) throw new Error('Not connected to Home Assistant.');
+        const fresh = await refreshAccessToken(haUrl, refreshToken);
+        ha.setTokens({ accessToken: fresh.access_token, refreshToken: fresh.refresh_token ?? refreshToken, expiresIn: fresh.expires_in });
+        accessToken = fresh.access_token;
+      }
+      if (!deviceId) throw new Error('Enter a device ID.');
+      await sendProfile(haUrl, accessToken, deviceId, buildProfile(state));
+      setHaResult({ ok: true, msg: `Profile applied to "${deviceId}".` });
+    } catch (err) {
+      setHaResult({ ok: false, msg: err.message });
+    } finally {
+      setHaSending(false);
+    }
   }
 
   function handleCopyMirrorList() {
@@ -146,6 +181,81 @@ export default function ImportExportModal({ mode, onClose }) {
                 </div>
               </div>
             )}
+
+            {/* Send to Home Assistant */}
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #e8eaed' }}>
+              <h3 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 4px', color: '#333' }}>
+                Send to Home Assistant
+              </h3>
+
+              {!ha.accessToken ? (
+                <>
+                  <p style={{ fontSize: 11, color: '#888', margin: '0 0 10px' }}>
+                    Connect to your HTTPS Home Assistant instance to apply this profile directly.
+                    HTTP-only instances: use Copy JSON above.
+                  </p>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
+                    <input
+                      type="url"
+                      value={haUrlInput}
+                      onChange={(e) => setHaUrlInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleConnectHA()}
+                      placeholder="https://homeassistant.local:8123"
+                      style={{ flex: 1, padding: '6px 8px', fontSize: 12, border: '1px solid #ccc', borderRadius: 4 }}
+                    />
+                    <button onClick={handleConnectHA} style={actionBtn('#1a237e')} disabled={!haUrlInput.trim()}>
+                      Connect
+                    </button>
+                  </div>
+                  <p style={{ fontSize: 10, color: '#aaa', margin: 0 }}>
+                    Not sure of your URL?{' '}
+                    <a href="https://my.home-assistant.io" target="_blank" rel="noreferrer" style={{ color: '#0277bd' }}>
+                      Find it at my.home-assistant.io
+                    </a>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <span style={{ fontSize: 12, color: '#555' }}>
+                      Connected: <strong style={{ color: '#1a237e' }}>{ha.haUrl.replace(/^https?:\/\//, '')}</strong>
+                    </span>
+                    <button onClick={ha.disconnect} style={{ ...actionBtn('#757575'), padding: '4px 10px', fontSize: 11 }}>
+                      Disconnect
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
+                    <input
+                      type="text"
+                      value={ha.deviceId}
+                      onChange={(e) => ha.setDeviceId(e.target.value)}
+                      placeholder="Device ID (e.g. ipad1)"
+                      style={{ flex: 1, padding: '6px 8px', fontSize: 12, border: '1px solid #ccc', borderRadius: 4 }}
+                    />
+                    <button
+                      onClick={handleSendToHA}
+                      disabled={haSending || !ha.deviceId.trim()}
+                      style={actionBtn(haSending ? '#78909c' : '#0277bd')}
+                    >
+                      {haSending ? 'Sending…' : '▶ Send Profile'}
+                    </button>
+                  </div>
+                  <p style={{ fontSize: 10, color: '#aaa', margin: 0 }}>
+                    Device ID is set in the HA integration config.
+                  </p>
+                  {haResult && (
+                    <p style={{
+                      fontSize: 12, margin: '8px 0 0',
+                      color: haResult.ok ? '#2e7d32' : '#c62828',
+                      background: haResult.ok ? '#f1f8e9' : '#fff5f5',
+                      padding: '6px 8px', borderRadius: 4,
+                    }}>
+                      {haResult.ok ? '✓ ' : '✗ '}{haResult.msg}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
           </>
         )}
 
