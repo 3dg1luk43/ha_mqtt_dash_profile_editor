@@ -1,11 +1,18 @@
 import { useRef } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { tileGeometry } from '../../utils/gridLayout';
-import { WIDGET_TYPES } from '../../data/widgetTypes';
+import WidgetPreview from './WidgetPreview';
+
+// iOS app default colors (matched from DashboardViewController.m)
+const TYPE_BG = {
+  light:  (fmt) => fmt.offBgColor || '#333347',   // rgba(0.20, 0.20, 0.28)
+  switch: (fmt) => fmt.offBgColor || '#333347',
+  scene:  (fmt) => fmt.offBgColor || '#333333',   // rgba(0.20, 0.20, 0.20)
+  button: (fmt) => fmt.bgColor    || '#594040',   // rgba(0.35, 0.25, 0.25)
+};
 
 export default function WidgetTile({ widget, grid, isSelected, hasOverlap, onSelect, onResize, onDelete }) {
   const geo = tileGeometry(widget, grid);
-  const typeDef = WIDGET_TYPES.find((t) => t.type === widget.type) ?? { icon: '?', label: widget.type };
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: widget.id,
@@ -42,18 +49,18 @@ export default function WidgetTile({ widget, grid, isSelected, hasOverlap, onSel
     resizeState.current = null;
   }
 
-  // Background from format
   const fmt = widget.format ?? {};
-  let bgColor = fmt.bgColor || '#23243a';
-  const textColor = fmt.textColor || '#e0e0e0';
-  const textSize = fmt.textSize ? `${fmt.textSize}px` : '14px';
-  const align = fmt.align || 'center';
+  const typeBgFn = TYPE_BG[widget.type];
+  // iOS default tile bg: rgba(0.18, 0.18, 0.18) = #2e2e2e; editor keeps the dark-blue default
+  let bgColor = typeBgFn ? typeBgFn(fmt) : (fmt.bgColor || '#23243a');
 
-  // Climate: tint the whole tile with the "off" state color at 25% opacity (preview hint)
-  let climateTint = null;
+  // Climate: tint with the "off" (or first) state color at 25% opacity
+  let background = bgColor;
   if (widget.type === 'climate' && widget.state_formats) {
     const offFmt = widget.state_formats.off ?? Object.values(widget.state_formats)[0];
-    if (offFmt?.bgColor) climateTint = offFmt.bgColor;
+    if (offFmt?.bgColor) {
+      background = `linear-gradient(${offFmt.bgColor}40, ${offFmt.bgColor}40), ${bgColor}`;
+    }
   }
 
   return (
@@ -68,10 +75,8 @@ export default function WidgetTile({ widget, grid, isSelected, hasOverlap, onSel
         top: geo.top,
         width: geo.width,
         height: geo.height,
-        background: climateTint
-          ? `linear-gradient(${climateTint}40, ${climateTint}40), ${bgColor}`
-          : bgColor,
-        borderRadius: 6,
+        background,
+        borderRadius: 8,
         border: isSelected
           ? '2px solid #4fc3f7'
           : hasOverlap
@@ -80,30 +85,21 @@ export default function WidgetTile({ widget, grid, isSelected, hasOverlap, onSel
         cursor: isDragging ? 'grabbing' : 'grab',
         opacity: isDragging ? 0.4 : 1,
         overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center',
-        justifyContent: 'center',
-        padding: '4px 6px',
         boxSizing: 'border-box',
         userSelect: 'none',
         zIndex: isSelected ? 10 : 1,
       }}
     >
-      {/* Type icon + label */}
-      <span style={{ fontSize: 18, lineHeight: 1 }}>{typeDef.icon}</span>
-      <span style={{ color: textColor, fontSize: textSize, lineHeight: 1.2, marginTop: 2, textAlign: align, wordBreak: 'break-word', maxWidth: '100%' }}>
-        {widget.label || widget.entity_id || typeDef.label}
-      </span>
-      {widget.entity_id && widget.label && (
-        <span style={{ color: '#888', fontSize: '10px', marginTop: 1, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {widget.entity_id}
-        </span>
-      )}
+      <WidgetPreview widget={widget} tileW={geo.width} tileH={geo.height} />
 
-      {/* Overlap tooltip */}
+      {/* Overlap badge */}
       {hasOverlap && (
-        <span style={{ position: 'absolute', top: 2, left: 4, fontSize: 9, color: '#ef5350', background: '#200000', padding: '1px 3px', borderRadius: 3 }}>
+        <span style={{
+          position: 'absolute', top: 2, left: 4,
+          fontSize: 9, color: '#ef5350',
+          background: '#200000', padding: '1px 3px', borderRadius: 3,
+          pointerEvents: 'none',
+        }}>
           overlap
         </span>
       )}
@@ -113,22 +109,12 @@ export default function WidgetTile({ widget, grid, isSelected, hasOverlap, onSel
         className="widget-delete-btn"
         onClick={(e) => { e.stopPropagation(); onDelete(widget.id); }}
         style={{
-          position: 'absolute',
-          top: 2,
-          right: 2,
-          width: 16,
-          height: 16,
-          borderRadius: '50%',
-          border: 'none',
-          background: '#ef5350',
-          color: '#fff',
-          fontSize: 10,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 0,
-          lineHeight: 1,
+          position: 'absolute', top: 2, right: 2,
+          width: 16, height: 16, borderRadius: '50%',
+          border: 'none', background: '#ef5350', color: '#fff',
+          fontSize: 10, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 0, lineHeight: 1,
         }}
       >
         ×
@@ -141,11 +127,8 @@ export default function WidgetTile({ widget, grid, isSelected, hasOverlap, onSel
         onPointerMove={onResizePointerMove}
         onPointerUp={onResizePointerUp}
         style={{
-          position: 'absolute',
-          bottom: 0,
-          right: 0,
-          width: 14,
-          height: 14,
+          position: 'absolute', bottom: 0, right: 0,
+          width: 14, height: 14,
           cursor: 'se-resize',
           background: 'rgba(255,255,255,0.15)',
           borderRadius: '4px 0 4px 0',

@@ -9,6 +9,7 @@ const WIDGET_EXTRA_KEYS = [
   'mealie_url', 'mealie_api_key', 'recipe_slug', 'visible_section',  // mealie
   'configurable',  // timer
   'temp_entity', 'target_entity', 'program_entity',  // sousvide / appliance extra entities
+  'dimmable',  // light: false hides brightness slider (default true)
 ];
 
 function exportWidget(w) {

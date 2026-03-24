@@ -8,6 +8,7 @@ import { parseProfile, profileToState } from './utils/profileExport';
 
 import Header from './components/Header';
 import DeviceSelector from './components/DeviceSelector';
+import WidgetPreview from './components/Canvas/WidgetPreview';
 import WidgetPalette from './components/WidgetPalette';
 import GridCanvas from './components/Canvas/GridCanvas';
 import { getNavOffset } from './components/Canvas/GridCanvas';
@@ -183,21 +184,25 @@ export default function App() {
     const cellW = grid.widget_dimensions[0] * csScale;
     const cellH = grid.widget_dimensions[1] * csScale;
 
-    let tileW, tileH, icon, label, bgColor, textColor;
+    let tileW, tileH, bgColor;
+
+    let previewWidget;
 
     if (activeItem.dragType === 'new') {
       const t = WIDGET_TYPES.find((x) => x.type === activeItem.widgetType);
       tileW = cellW; tileH = cellH;
-      icon = t?.icon ?? '?'; label = t?.label ?? activeItem.widgetType;
-      bgColor = '#23243a'; textColor = '#e0e0e0';
+      bgColor = '#23243a';
+      previewWidget = {
+        type: activeItem.widgetType,
+        label: t?.label ?? activeItem.widgetType,
+        format: {},
+      };
     } else if (activeItem.dragType === 'move') {
       const wi = widgets.find((x) => x.id === activeItem.widgetId);
       if (!wi) return null;
-      const t = WIDGET_TYPES.find((x) => x.type === wi.type) ?? { icon: '?', label: wi.type };
       tileW = wi.w * cellW; tileH = wi.h * cellH;
-      icon = t.icon; label = wi.label || wi.entity_id || t.label;
       bgColor = wi.format?.bgColor || '#23243a';
-      textColor = wi.format?.textColor || '#e0e0e0';
+      previewWidget = wi;
     } else {
       return null;
     }
@@ -206,19 +211,16 @@ export default function App() {
       <div style={{
         width: tileW, height: tileH,
         background: bgColor,
-        borderRadius: 6,
+        borderRadius: 8,
         border: '2px solid #4fc3f7',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
         opacity: 0.82,
         boxShadow: '0 4px 20px #0005',
         overflow: 'hidden',
         pointerEvents: 'none',
-        padding: '4px 6px',
         boxSizing: 'border-box',
+        position: 'relative',
       }}>
-        <span style={{ fontSize: Math.max(12, cellH * 0.3), lineHeight: 1 }}>{icon}</span>
-        <span style={{ color: textColor, fontSize: Math.max(9, cellH * 0.12), marginTop: 2, textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>{label}</span>
+        <WidgetPreview widget={previewWidget} tileW={tileW} tileH={tileH} />
       </div>
     );
   }

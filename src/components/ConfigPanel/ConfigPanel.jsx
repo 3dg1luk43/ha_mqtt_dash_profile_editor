@@ -16,6 +16,7 @@ import WebpageConfig from './widget_configs/WebpageConfig';
 import MealieConfig from './widget_configs/MealieConfig';
 import SousvideConfig from './widget_configs/SousvideConfig';
 import ApplianceConfig from './widget_configs/ApplianceConfig';
+import LightConfig from './widget_configs/LightConfig';
 
 const SENSOR_TYPES = ['sensor', 'value', 'person'];
 
@@ -83,6 +84,7 @@ export default function ConfigPanel() {
 
 function TypeConfig({ widget, onChange }) {
   const t = widget.type;
+  if (t === 'light') return <LightConfig widget={widget} onChange={onChange} />;
   if (SENSOR_TYPES.includes(t)) return <SensorConfig widget={widget} onChange={onChange} />;
   if (t === 'label') return <LabelConfig widget={widget} onChange={onChange} />;
   if (t === 'clock') return <ClockConfig widget={widget} onChange={onChange} />;
