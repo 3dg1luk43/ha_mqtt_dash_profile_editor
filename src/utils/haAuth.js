@@ -69,11 +69,14 @@ export async function refreshAccessToken(haUrl, refreshToken) {
 }
 
 /**
- * Send the profile to HA via the set_device_profile service.
+ * Send the profile to HA via the integration's custom CORS-enabled endpoint.
+ * Uses /api/ha_mqtt_dash/apply_profile (registered by the integration) rather
+ * than the generic /api/services endpoint, which does not emit CORS headers for
+ * external origins.
  * Throws on non-2xx response.
  */
 export async function sendProfile(haUrl, accessToken, deviceId, profile) {
-  const resp = await fetch(`${haUrl}/api/services/ha_mqtt_dash/set_device_profile`, {
+  const resp = await fetch(`${haUrl}/api/ha_mqtt_dash/apply_profile`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
