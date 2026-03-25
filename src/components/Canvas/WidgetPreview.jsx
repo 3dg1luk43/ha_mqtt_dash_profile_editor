@@ -490,6 +490,101 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
       );
     }
 
+    // ---- media player ----------------------------------------------------
+    case 'mediaplayer': {
+      const pad     = Math.max(4, Math.min(IW, IH) * 0.028);
+      const base    = Math.max(8, Math.min(IW, IH) * 0.075);
+      const titleFs = Math.max(9,  base * 1.10);
+      const artistFs= Math.max(8,  base * 0.85);
+      const timeFs  = Math.max(7,  base * 0.72);
+      const ctrlH   = Math.max(20, IH * 0.30);
+      const sliderH = Math.max(5,  IH * 0.072);
+      const timeRowH= Math.max(10, timeFs * 1.4);
+
+      // SVG icon helper — same geometry as iOS _mpIconPath
+      function TransportIcon({ type, size }) {
+        const bw = size, bh = size;
+        const cx = bw / 2, cy = bh / 2;
+        const iconH = bh * 0.48;
+        const triW  = iconH * 0.84;
+        const barW  = Math.max(2, iconH * 0.20);
+        const barGap= Math.max(2, iconH * 0.14);
+
+        let path = null;
+        if (type === 'play') {
+          const x0 = cx - triW * 0.42, y0 = cy - iconH / 2;
+          path = `M${x0},${y0} L${cx + triW * 0.58},${cy} L${x0},${cy + iconH / 2} Z`;
+        } else if (type === 'pause') {
+          const tw = barW * 2 + barGap;
+          const x0 = cx - tw / 2, y0 = cy - iconH / 2;
+          path = `M${x0},${y0} h${barW} v${iconH} h${-barW} Z M${x0 + barW + barGap},${y0} h${barW} v${iconH} h${-barW} Z`;
+        } else if (type === 'next') {
+          const tw = triW + barGap + barW;
+          const x0 = cx - tw / 2, y0 = cy - iconH / 2;
+          path = `M${x0},${y0} L${x0 + triW},${cy} L${x0},${y0 + iconH} Z M${x0 + triW + barGap},${y0} h${barW} v${iconH} h${-barW} Z`;
+        } else { // prev
+          const tw = barW + barGap + triW;
+          const x0 = cx - tw / 2, y0 = cy - iconH / 2;
+          const tx = x0 + barW + barGap;
+          path = `M${x0},${y0} h${barW} v${iconH} h${-barW} Z M${tx + triW},${y0} L${tx},${cy} L${tx + triW},${y0 + iconH} Z`;
+        }
+        return (
+          <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: 'block' }}>
+            <path d={path} fill="rgba(255,255,255,0.85)" />
+          </svg>
+        );
+      }
+
+      const btnW = Math.floor((IW - pad * 2) / 3);
+
+      return (
+        <div style={{ ...colStyle, padding: `${pad}px`, gap: 0 }}>
+          {/* Song title */}
+          <div style={{
+            color: '#e0e0e0', fontSize: titleFs, fontWeight: 'bold',
+            lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap', flexShrink: 0, marginBottom: 1,
+          }}>
+            {widget.label || 'Song Title'}
+          </div>
+          {/* Artist */}
+          <div style={{
+            color: 'rgba(255,255,255,0.5)', fontSize: artistFs,
+            lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap', flexShrink: 0, marginBottom: 4,
+          }}>
+            {widget.entity_id ? widget.entity_id.replace('media_player.', '') : 'Artist'}
+          </div>
+          {/* Transport controls */}
+          <div style={{
+            display: 'flex', flexShrink: 0, height: ctrlH,
+            marginLeft: pad, marginRight: pad,
+          }}>
+            {['prev', 'play', 'next'].map((icon) => (
+              <div key={icon} style={{
+                width: btnW, height: ctrlH,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(255,255,255,0.08)', borderRadius: 4,
+                marginRight: icon !== 'next' ? 2 : 0,
+              }}>
+                <TransportIcon type={icon} size={Math.floor(ctrlH * 0.60)} />
+              </div>
+            ))}
+          </div>
+          {/* Progress bar */}
+          <div style={{ marginTop: 6, marginLeft: pad, marginRight: pad, flexShrink: 0 }}>
+            <div style={{ height: sliderH, background: 'rgba(255,255,255,0.12)', borderRadius: sliderH / 2, overflow: 'hidden' }}>
+              <div style={{ width: '35%', height: '100%', background: 'rgba(255,255,255,0.6)', borderRadius: sliderH / 2 }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+              <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: timeFs, fontVariantNumeric: 'tabular-nums' }}>1:12</span>
+              <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: timeFs, fontVariantNumeric: 'tabular-nums' }}>3:28</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // ---- fallback --------------------------------------------------------
     default: {
       const typeDef = WIDGET_TYPES.find((t) => t.type === type) ?? { icon: '?', label: type };
