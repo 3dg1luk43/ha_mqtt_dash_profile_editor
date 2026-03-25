@@ -233,9 +233,9 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
       const titleH = 14;
       const segH = 30;
       const clRowH = Math.max(32, IH - titleH - 4 - segH - 4);
+      const valFontSize = format.textSize ? Number(format.textSize) : Math.max(14, clRowH * 0.38);
       const clBtnW = Math.min(clRowH, IW * 0.22);
-      const clFontSize = Math.max(18, clRowH * 0.52);
-      const valFontSize = Math.max(14, clRowH * 0.38);
+      const clFontSize = Math.max(18, valFontSize * 1.35);
       const btnFontSize = Math.max(8, Math.min(10, IW / modes.length * 0.55));
 
       return (
