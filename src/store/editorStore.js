@@ -41,6 +41,7 @@ export const useEditorStore = create(
       selectedWidgetId: null,
       banner: '',
       navbar_edge: 'bottom',
+      navbar_style: {},
       history: [],
       future: [],
 
@@ -168,6 +169,12 @@ export const useEditorStore = create(
       // ── Misc ──────────────────────────────────────────────────────────────
       setBanner: (banner) => set({ banner }),
       setNavbarEdge: (navbar_edge) => set({ navbar_edge }),
+      setNavbarStyle: (patch) => set((s) => {
+        const next = { ...s.navbar_style, ...patch };
+        // Remove keys explicitly set to undefined/null/empty
+        Object.keys(next).forEach((k) => { if (!next[k]) delete next[k]; });
+        return { navbar_style: next };
+      }),
       setWidgets: (widgets) => set((s) => ({  // used by import — replaces active page widgets
         pages: s.pages.map((p, i) => i === s.activePageIndex ? { ...p, widgets } : p),
       })),

@@ -1,3 +1,5 @@
+import EntityAutocomplete from '../EntityAutocomplete';
+
 export default function SousvideConfig({ widget, onChange }) {
   return (
     <div>
@@ -9,49 +11,37 @@ export default function SousvideConfig({ widget, onChange }) {
 
       <div style={{ marginBottom: 8 }}>
         <label style={labelStyle}>Status entity <span style={hint}>(sensor.* — "cooking" activates tile)</span></label>
-        <input
-          type="text"
+        <EntityAutocomplete
           value={widget.entity_id ?? ''}
-          onChange={(e) => onChange({ entity_id: e.target.value })}
+          onChange={(v) => onChange({ entity_id: v })}
           placeholder="sensor.sv_status"
-          list="entity-autocomplete"
-          style={inputStyle}
         />
       </div>
 
       <div style={{ marginBottom: 8 }}>
         <label style={labelStyle}>Current temp entity <span style={hint}>(sensor.*)</span></label>
-        <input
-          type="text"
+        <EntityAutocomplete
           value={widget.temp_entity ?? ''}
-          onChange={(e) => onChange({ temp_entity: e.target.value })}
+          onChange={(v) => onChange({ temp_entity: v })}
           placeholder="sensor.sv_temperature"
-          list="entity-autocomplete"
-          style={inputStyle}
         />
       </div>
 
       <div style={{ marginBottom: 8 }}>
         <label style={labelStyle}>Target temp entity <span style={hint}>(sensor.*)</span></label>
-        <input
-          type="text"
+        <EntityAutocomplete
           value={widget.target_entity ?? ''}
-          onChange={(e) => onChange({ target_entity: e.target.value })}
+          onChange={(v) => onChange({ target_entity: v })}
           placeholder="sensor.sv_target_temperature"
-          list="entity-autocomplete"
-          style={inputStyle}
         />
       </div>
 
       <div style={{ marginBottom: 8 }}>
         <label style={labelStyle}>Time remaining entity <span style={hint}>(minutes → HH:MM)</span></label>
-        <input
-          type="text"
+        <EntityAutocomplete
           value={widget.time_entity ?? ''}
-          onChange={(e) => onChange({ time_entity: e.target.value })}
+          onChange={(v) => onChange({ time_entity: v })}
           placeholder="sensor.sv_remaining_minutes"
-          list="entity-autocomplete"
-          style={inputStyle}
         />
       </div>
 

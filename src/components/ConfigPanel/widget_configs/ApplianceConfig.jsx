@@ -1,3 +1,5 @@
+import EntityAutocomplete from '../EntityAutocomplete';
+
 export default function ApplianceConfig({ widget, onChange }) {
   return (
     <div>
@@ -9,37 +11,28 @@ export default function ApplianceConfig({ widget, onChange }) {
 
       <div style={{ marginBottom: 8 }}>
         <label style={labelStyle}>Running state entity <span style={hint}>(off/idle/standby/unavail = dim)</span></label>
-        <input
-          type="text"
+        <EntityAutocomplete
           value={widget.entity_id ?? ''}
-          onChange={(e) => onChange({ entity_id: e.target.value })}
+          onChange={(v) => onChange({ entity_id: v })}
           placeholder="sensor.washer_state"
-          list="entity-autocomplete"
-          style={inputStyle}
         />
       </div>
 
       <div style={{ marginBottom: 8 }}>
         <label style={labelStyle}>Program entity <span style={hint}>(sensor.* — free text)</span></label>
-        <input
-          type="text"
+        <EntityAutocomplete
           value={widget.program_entity ?? ''}
-          onChange={(e) => onChange({ program_entity: e.target.value })}
+          onChange={(v) => onChange({ program_entity: v })}
           placeholder="sensor.washer_program"
-          list="entity-autocomplete"
-          style={inputStyle}
         />
       </div>
 
       <div style={{ marginBottom: 8 }}>
         <label style={labelStyle}>Time remaining entity <span style={hint}>(minutes → HH:MM)</span></label>
-        <input
-          type="text"
+        <EntityAutocomplete
           value={widget.time_entity ?? ''}
-          onChange={(e) => onChange({ time_entity: e.target.value })}
+          onChange={(v) => onChange({ time_entity: v })}
           placeholder="sensor.washer_remaining_minutes"
-          list="entity-autocomplete"
-          style={inputStyle}
         />
       </div>
     </div>

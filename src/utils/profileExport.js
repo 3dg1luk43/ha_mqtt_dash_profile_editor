@@ -18,6 +18,7 @@ function exportWidget(w) {
   if (w.label) out.label = w.label;
   out.x = w.x; out.y = w.y; out.w = w.w; out.h = w.h;
   if (w.protected) out.protected = true;
+  // preview_value is editor-only — never exported to the profile
 
   for (const key of WIDGET_EXTRA_KEYS) {
     if (key === 'overlay_button') {
@@ -60,6 +61,9 @@ export function buildProfile(state) {
       return p;
     }),
   };
+  if (state.navbar_style && Object.keys(state.navbar_style).length > 0) {
+    profile.ui.navbar_style = { ...state.navbar_style };
+  }
 
   return profile;
 }
@@ -105,7 +109,13 @@ export function profileToState(profile) {
       pages = [{ id: `page_${Date.now()}`, name: 'Main', widgets: [] }];
     }
 
-    return { banner: profile.banner ?? '', grid, pages, navbar_edge: ui.navbar_edge ?? 'bottom' };
+    return {
+      banner: profile.banner ?? '',
+      grid,
+      pages,
+      navbar_edge: ui.navbar_edge ?? 'bottom',
+      navbar_style: (ui.navbar_style && typeof ui.navbar_style === 'object') ? ui.navbar_style : {},
+    };
   }
 
   // Old flat format: { banner, grid, widgets }

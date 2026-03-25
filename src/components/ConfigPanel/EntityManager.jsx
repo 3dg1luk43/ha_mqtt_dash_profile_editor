@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { useEntityStore } from '../../store/entityStore';
+import { useHaStore } from '../../store/haStore';
 
 export default function EntityManager() {
   const { entities, addEntity, removeEntity, bulkAdd, clearAll } = useEntityStore();
+  const { haUrl, accessToken } = useHaStore();
+
   const [singleInput, setSingleInput] = useState('');
   const [bulkInput, setBulkInput] = useState('');
-  const [tab, setTab] = useState('list'); // 'list' | 'bulk'
+  const [tab, setTab] = useState('list'); // 'list' | 'bulk' | 'sync'
   const [filter, setFilter] = useState('');
+  const [syncStatus, setSyncStatus] = useState('');
+  const [syncing, setSyncing] = useState(false);
 
   function handleAdd() {
     addEntity(singleInput);
@@ -18,6 +23,38 @@ export default function EntityManager() {
       bulkAdd(bulkInput);
       setBulkInput('');
       setTab('list');
+    }
+  }
+
+  async function handleSyncFromHA() {
+    const url = (haUrl || '').replace(/\/$/, '');
+    const token = accessToken;
+    if (!url || !token) {
+      setSyncStatus('error:Connect to HA first (use Import/Export → Send to HA to set credentials).');
+      return;
+    }
+    setSyncing(true);
+    setSyncStatus('');
+    try {
+      const res = await fetch(`${url}/api/ha_mqtt_dash/entities`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => res.status);
+        setSyncStatus(`error:${res.status}: ${txt}`);
+        return;
+      }
+      const data = await res.json();
+      if (!Array.isArray(data.entities)) {
+        setSyncStatus('error:Unexpected response format.');
+        return;
+      }
+      bulkAdd(data.entities.join('\n'));
+      setSyncStatus(`ok:Imported ${data.entities.length} entities from HA.`);
+    } catch (e) {
+      setSyncStatus(`error:${e.message}`);
+    } finally {
+      setSyncing(false);
     }
   }
 
@@ -33,6 +70,9 @@ export default function EntityManager() {
     grouped[domain].push(e);
   });
 
+  const statusIsError = syncStatus.startsWith('error:');
+  const statusMsg = syncStatus.replace(/^(ok|error):/, '');
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -46,9 +86,9 @@ export default function EntityManager() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 10, borderBottom: '1px solid #eee' }}>
-        {[['list', 'List'], ['bulk', 'Bulk add']].map(([t, lbl]) => (
+        {[['list', 'List'], ['bulk', 'Bulk add'], ['sync', '⟳ Sync from HA']].map(([t, lbl]) => (
           <button key={t} onClick={() => setTab(t)} style={{
-            padding: '4px 12px', fontSize: 12, border: 'none', background: 'none', cursor: 'pointer',
+            padding: '4px 10px', fontSize: 12, border: 'none', background: 'none', cursor: 'pointer',
             borderBottom: tab === t ? '2px solid #1a237e' : '2px solid transparent',
             color: tab === t ? '#1a237e' : '#666', fontWeight: tab === t ? 600 : 400,
           }}>{lbl}</button>
@@ -84,7 +124,7 @@ export default function EntityManager() {
           {/* Entity list grouped by domain */}
           {entities.length === 0 ? (
             <p style={{ fontSize: 11, color: '#bbb', textAlign: 'center', padding: '16px 0' }}>
-              No entities yet — add one above or use Bulk add
+              No entities yet — add one above, use Bulk add, or Sync from HA
             </p>
           ) : (
             <div style={{ maxHeight: 300, overflowY: 'auto' }}>
@@ -135,6 +175,45 @@ export default function EntityManager() {
           <button onClick={handleBulkAdd} style={{ ...btnStyle('#1a237e'), marginTop: 6 }}>
             Add all
           </button>
+        </>
+      )}
+
+      {tab === 'sync' && (
+        <>
+          <p style={{ fontSize: 11, color: '#777', marginBottom: 10, lineHeight: 1.5 }}>
+            Fetches all entity IDs directly from your Home Assistant instance via the MQTTDash API.
+            <br /><br />
+            Requires HA credentials — connect first using <strong>Import/Export → Send to HA</strong>.
+          </p>
+
+          {haUrl && accessToken ? (
+            <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 4, padding: '6px 10px', marginBottom: 10, fontSize: 11, color: '#2e7d32' }}>
+              Connected to: <strong>{haUrl}</strong>
+            </div>
+          ) : (
+            <div style={{ background: '#fff3e0', border: '1px solid #ffcc80', borderRadius: 4, padding: '6px 10px', marginBottom: 10, fontSize: 11, color: '#e65100' }}>
+              Not connected — open Import/Export and authenticate with HA first.
+            </div>
+          )}
+
+          <button
+            onClick={handleSyncFromHA}
+            disabled={syncing || !haUrl || !accessToken}
+            style={{ ...btnStyle('#1a237e'), opacity: (!haUrl || !accessToken) ? 0.5 : 1, cursor: (!haUrl || !accessToken) ? 'not-allowed' : 'pointer' }}
+          >
+            {syncing ? 'Fetching…' : '⟳ Fetch entity list from HA'}
+          </button>
+
+          {statusMsg && (
+            <div style={{
+              marginTop: 10, padding: '6px 10px', borderRadius: 4, fontSize: 11,
+              background: statusIsError ? '#fdecea' : '#e8f5e9',
+              border: `1px solid ${statusIsError ? '#ef9a9a' : '#a5d6a7'}`,
+              color: statusIsError ? '#c62828' : '#2e7d32',
+            }}>
+              {statusMsg}
+            </div>
+          )}
         </>
       )}
     </div>

@@ -1,3 +1,5 @@
+import EntityAutocomplete from '../EntityAutocomplete';
+
 const ENTITY_FIELDS = [
   { key: 'nozzle_entity', label: 'Nozzle temp entity' },
   { key: 'bed_entity', label: 'Bed temp entity' },
@@ -23,13 +25,10 @@ export default function PrinterConfig({ widget, onChange }) {
       {ENTITY_FIELDS.map(({ key, label }) => (
         <div key={key} style={{ marginBottom: 6 }}>
           <label style={labelStyle}>{label}</label>
-          <input
-            type="text"
-            list="entity-autocomplete"
+          <EntityAutocomplete
             value={widget[key] ?? ''}
-            onChange={(e) => onChange({ [key]: e.target.value })}
+            onChange={(v) => onChange({ [key]: v })}
             placeholder="sensor...."
-            style={inputStyle}
           />
         </div>
       ))}

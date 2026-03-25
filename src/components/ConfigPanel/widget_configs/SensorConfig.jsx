@@ -12,6 +12,18 @@ export default function SensorConfig({ widget, onChange }) {
           style={inputStyle}
         />
       </div>
+      <div style={{ marginBottom: 8 }}>
+        <label style={labelStyle}>
+          Preview value <span style={{ color: '#aaa', fontWeight: 400 }}>(editor simulation only)</span>
+        </label>
+        <input
+          type="text"
+          value={widget.preview_value ?? ''}
+          onChange={(e) => onChange({ preview_value: e.target.value || undefined })}
+          placeholder="e.g. 42"
+          style={inputStyle}
+        />
+      </div>
     </div>
   );
 }

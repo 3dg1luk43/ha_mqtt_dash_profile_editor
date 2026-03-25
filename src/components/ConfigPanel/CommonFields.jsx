@@ -1,4 +1,5 @@
 // Common fields for every widget: label, entity_id, x, y, w, h, protected
+import EntityAutocomplete from './EntityAutocomplete';
 
 export default function CommonFields({ widget, onChange }) {
   function handleChange(field, value) {
@@ -33,12 +34,9 @@ export default function CommonFields({ widget, onChange }) {
       </Field>
       {widget.type !== 'label' && widget.type !== 'clock' && widget.type !== 'sousvide' && widget.type !== 'appliance' && (
         <Field label="Entity ID">
-          <input
-            type="text"
-            list="entity-autocomplete"
+          <EntityAutocomplete
             value={widget.entity_id ?? ''}
-            onChange={(e) => handleChange('entity_id', e.target.value)}
-            style={inputStyle}
+            onChange={(v) => handleChange('entity_id', v)}
             placeholder="e.g. light.bedroom"
           />
         </Field>

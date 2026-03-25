@@ -19,7 +19,7 @@ function collectEntityIds(pages) {
 
 export default function ImportExportModal({ mode, onClose }) {
   const state = useEditorStore();
-  const { pages, setPages, setGridConfig, setBanner, setNavbarEdge } = useEditorStore();
+  const { pages, setPages, setGridConfig, setBanner, setNavbarEdge, setNavbarStyle } = useEditorStore();
   const ha = useHaStore();
 
   const [tab, setTab] = useState('paste');
@@ -108,6 +108,7 @@ export default function ImportExportModal({ mode, onClose }) {
     setPages(s.pages);
     setBanner(s.banner ?? '');
     if (s.navbar_edge) setNavbarEdge(s.navbar_edge);
+    if (s.navbar_style) setNavbarStyle(s.navbar_style);
     setParseError('');
     onClose();
   }

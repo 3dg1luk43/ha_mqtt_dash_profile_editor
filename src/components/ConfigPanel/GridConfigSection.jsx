@@ -1,10 +1,22 @@
+import { useState } from 'react';
+import { HexColorPicker } from 'react-colorful';
 import { useEditorStore, effectiveGrid } from '../../store/editorStore';
 import { NAV_H, NAV_W } from '../Canvas/GridCanvas';
 
 const NAVBAR_EDGES = ['top', 'bottom', 'left', 'right'];
 
+const NAV_STYLE_FIELDS = [
+  { key: 'bgColor',       label: 'Bar background',  placeholder: '#141414' },
+  { key: 'activeColor',   label: 'Active tab',       placeholder: '#336ee6' },
+  { key: 'inactiveColor', label: 'Inactive tab',     placeholder: '#404040' },
+  { key: 'textColor',     label: 'Tab text',         placeholder: '#ffffff' },
+  { key: 'borderColor',   label: 'Border',           placeholder: 'rgba(255,255,255,0.18)' },
+];
+
 export default function GridConfigSection() {
-  const { grid, banner, setBanner, setGridConfig, setPageGrid, setNavbarEdge, navbar_edge, device, orientation, pages, activePageIndex } = useEditorStore();
+  const { grid, banner, setBanner, setGridConfig, setPageGrid, setNavbarEdge, setNavbarStyle, navbar_edge, navbar_style = {}, device, orientation, pages, activePageIndex } = useEditorStore();
+  const [navStyleOpen, setNavStyleOpen] = useState(false);
+  const [openPicker, setOpenPicker] = useState(null);
 
   const activePage = pages[activePageIndex];
   const hasPageOverride = !!activePage?.grid;
@@ -119,6 +131,52 @@ export default function GridConfigSection() {
           ))}
         </div>
       </Field>
+
+      {/* Nav bar style colors */}
+      <div style={{ marginBottom: 10 }}>
+        <button
+          onClick={() => setNavStyleOpen(!navStyleOpen)}
+          style={{ width: '100%', textAlign: 'left', background: navStyleOpen ? '#e8eaf6' : '#f5f5f5', border: '1px solid #ddd', borderRadius: 4, padding: '4px 8px', fontSize: 12, cursor: 'pointer', fontWeight: 600, color: '#333' }}
+        >
+          {navStyleOpen ? '▾' : '▸'} Nav bar colors
+          {Object.keys(navbar_style).length > 0 && <span style={{ marginLeft: 6, fontSize: 10, color: '#888' }}>(custom)</span>}
+        </button>
+        {navStyleOpen && (
+          <div style={{ marginTop: 6, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            {NAV_STYLE_FIELDS.map(({ key, label, placeholder }) => {
+              const val = navbar_style[key] || '';
+              return (
+                <div key={key} style={{ position: 'relative' }}>
+                  <label style={{ fontSize: 10, color: '#666', display: 'block', marginBottom: 2 }}>{label}</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <button
+                      onClick={() => setOpenPicker(openPicker === key ? null : key)}
+                      style={{ width: 20, height: 20, borderRadius: 3, border: '1px solid #ccc', background: val || '#fff', cursor: 'pointer', flexShrink: 0 }}
+                      title={val || placeholder}
+                    />
+                    <input
+                      type="text"
+                      value={val}
+                      onChange={(e) => setNavbarStyle({ [key]: e.target.value || undefined })}
+                      placeholder={placeholder}
+                      style={{ fontSize: 10, padding: '2px 4px', border: '1px solid #ddd', borderRadius: 3, width: '100%', boxSizing: 'border-box' }}
+                    />
+                    {val && (
+                      <button onClick={() => setNavbarStyle({ [key]: undefined })} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#bbb', fontSize: 13, padding: 0, lineHeight: 1, flexShrink: 0 }}>×</button>
+                    )}
+                  </div>
+                  {openPicker === key && (
+                    <div style={{ position: 'absolute', zIndex: 200, top: '100%', left: 0, background: '#fff', borderRadius: 8, boxShadow: '0 4px 20px #0002', padding: 8 }}>
+                      <HexColorPicker color={val || '#ffffff'} onChange={(c) => setNavbarStyle({ [key]: c })} />
+                      <button onClick={() => { setNavbarStyle({ [key]: undefined }); setOpenPicker(null); }} style={{ marginTop: 6, width: '100%', fontSize: 11, padding: '3px 0', border: '1px solid #ddd', borderRadius: 4, cursor: 'pointer', background: '#f5f5f5' }}>Clear</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <Field label="Banner text">
         <input

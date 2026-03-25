@@ -121,7 +121,8 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
     case 'person': {
       const unit = widget.unit || '';
       const mockValue =
-        type === 'person' ? 'home'
+        widget.preview_value != null ? widget.preview_value
+        : type === 'person' ? 'home'
         : (MOCK_VALUES_BY_UNIT[unit] || '—');
       const baseSize = format.textSize
         ? Number(format.textSize)
@@ -364,21 +365,50 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
 
     // ---- Mealie recipe browser -------------------------------------------
     case 'mealie': {
-      const mockRecipes = ['Pasta Carbonara', 'Chicken Tikka Masala', 'Greek Salad', 'Beef Stir Fry', 'Lemon Risotto'];
-      const maxRows = Math.floor((IH - 16) / 16);
+      const mockRecipes = [
+        { name: 'Pasta Carbonara',      tags: ['Italian', 'Quick'] },
+        { name: 'Chicken Tikka Masala', tags: ['Indian']           },
+        { name: 'Greek Salad',          tags: ['Vegetarian']       },
+        { name: 'Beef Stir Fry',        tags: ['Asian', 'Quick']   },
+        { name: 'Lemon Risotto',        tags: ['Italian']          },
+        { name: 'Tacos',                tags: ['Mexican']          },
+      ];
+      const fontSize = format.textSize || 10;
+      const gap = 3;
+      const cardW = Math.floor((IW - gap) / 2);
+
+      // Simple deterministic hue from tag name (mirrors iOS mealieTagColor)
+      function tagHue(name) {
+        let h = 5381;
+        for (let i = 0; i < name.length; i++) h = (h * 33 ^ name.charCodeAt(i)) >>> 0;
+        return (h % 360);
+      }
+
       return (
         <div style={colStyle}>
           <TitleLabel text={widget.label || 'Recipes'} />
-          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            {mockRecipes.slice(0, maxRows).map((r, i) => (
-              <div key={i} style={{
-                color: '#c0c0c0', fontSize: '10px', lineHeight: '16px',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0,
-              }}>
-                {r}
-              </div>
-            ))}
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap, alignContent: 'flex-start' }}>
+              {mockRecipes.map((r, i) => (
+                <div key={i} style={{
+                  width: cardW, background: 'rgba(255,255,255,0.12)', borderRadius: 4,
+                  padding: '4px 5px', boxSizing: 'border-box',
+                }}>
+                  <div style={{ color: '#fff', fontSize, fontWeight: 500, lineHeight: 1.3, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {r.name}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                    {r.tags.slice(0, 2).map((t) => (
+                      <span key={t} style={{
+                        fontSize: Math.max(7, fontSize - 2), padding: '1px 4px',
+                        borderRadius: 8, color: '#fff',
+                        background: `hsl(${tagHue(t)},55%,42%)`,
+                      }}>{t}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       );
