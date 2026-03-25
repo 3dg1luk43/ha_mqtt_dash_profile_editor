@@ -112,8 +112,8 @@ export const WIDGET_TYPES = [
   },
   {
     type: 'printer',
-    label: 'Printer',
-    icon: '🖨️',
+    label: '3D Printer',
+    icon: '📦',
     description: 'Composite 3D printer status',
     fields: ['nozzle_entity', 'bed_entity', 'time_entity', 'progress_entity', 'status_entity', 'progress_unit', 'visible_rows', 'label', 'format'],
     format: true,

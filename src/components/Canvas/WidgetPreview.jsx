@@ -139,8 +139,7 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
             {unit && (
               <span style={{
                 color: textColor, fontSize: `${unitSize}px`,
-                marginLeft: 3, lineHeight: 1,
-                alignSelf: 'flex-end', paddingBottom: 3,
+                marginLeft: 4, lineHeight: 1,
               }}>
                 {unit}
               </span>
@@ -284,28 +283,77 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
       );
     }
 
-    // ---- 3D printer ------------------------------------------------------
+    // ---- 3D printer (Garmin-style field grid) ----------------------------
     case 'printer':
     case 'printer3d': {
       const visible = widget.visible_rows || ['nozzle', 'bed', 'time', 'progress', 'status'];
-      const availH = IH - 14;
-      const rowH = Math.max(12, Math.min(18, availH / Math.max(1, visible.length)));
-      const rowFs = Math.max(9, rowH * 0.72);
+      const hasStatus = visible.includes('status');
+      const fieldKeys = ['nozzle', 'bed', 'time', 'progress'].filter(r => visible.includes(r));
+
+      const hdrH = 20;
+      const bodyH = IH - hdrH;
+      const nCols = fieldKeys.length <= 1 ? 1 : 2;
+      const nRows = Math.ceil(fieldKeys.length / Math.max(1, nCols));
+      const cellH = nRows > 0 ? bodyH / nRows : bodyH;
+      const valueFs = Math.max(10, Math.min(cellH * 0.50, 44));
+      const fldFs   = Math.max(7,  Math.min(cellH * 0.20, 10));
+
+      const MOCK_FIELDS = {
+        nozzle:   { val: '215°C', lbl: 'NOZZLE',    prog: false },
+        bed:      { val: '60°C',  lbl: 'BED',        prog: false },
+        time:     { val: '01:23', lbl: 'REMAINING',  prog: false },
+        progress: { val: '45%',   lbl: 'PROGRESS',   prog: true  },
+      };
 
       return (
-        <div style={colStyle}>
-          <TitleLabel text={displayLabel || '3D Printer'} />
-          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            {visible.map((row, i) => {
-              const d = MOCK_PRINTER[row];
-              if (!d) return null;
-              return (
-                <div key={i} style={{ color: textColor, fontSize: `${rowFs}px`, height: rowH, lineHeight: `${rowH}px`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {d[0]}: {d[1]}{d[2]}
-                </div>
-              );
-            })}
+        <div style={{ width: '100%', height: '100%', boxSizing: 'border-box', overflow: 'hidden', padding: '0 4px 4px' }}>
+          {/* Header: label + status */}
+          <div style={{
+            height: hdrH, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            borderBottom: '0.5px solid rgba(255,255,255,0.12)',
+          }}>
+            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 'bold' }}>
+              {displayLabel || '3D Printer'}
+            </span>
+            {hasStatus && (
+              <span style={{ color: '#4de06a', fontSize: 10 }}>Printing</span>
+            )}
           </div>
+          {/* Field cell grid */}
+          {fieldKeys.length > 0 && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${nCols}, 1fr)`,
+              height: bodyH,
+              overflow: 'hidden',
+            }}>
+              {fieldKeys.map((row, i) => {
+                const m = MOCK_FIELDS[row] || { val: '--', lbl: row.toUpperCase(), prog: false };
+                const col    = i % nCols;
+                const rowIdx = Math.floor(i / nCols);
+                return (
+                  <div key={row} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    borderLeft: col > 0 ? '0.5px solid rgba(255,255,255,0.12)' : 'none',
+                    borderTop: rowIdx > 0 ? '0.5px solid rgba(255,255,255,0.12)' : 'none',
+                    overflow: 'hidden', gap: 1,
+                  }}>
+                    <span style={{ color: textColor, fontSize: `${valueFs}px`, fontWeight: 'bold', lineHeight: 1.1, textAlign: 'center' }}>
+                      {m.val}
+                    </span>
+                    {m.prog && (
+                      <div style={{ width: '72%', height: 3, background: 'rgba(255,255,255,0.15)', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ width: '45%', height: '100%', background: '#4d9fe0', borderRadius: 3 }} />
+                      </div>
+                    )}
+                    <span style={{ color: 'rgba(255,255,255,0.38)', fontSize: `${fldFs}px` }}>
+                      {m.lbl}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       );
     }
