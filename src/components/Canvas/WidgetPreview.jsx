@@ -288,14 +288,16 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
     case 'printer3d': {
       const visible = widget.visible_rows || ['nozzle', 'bed', 'time', 'progress', 'status'];
       const hasStatus = visible.includes('status');
-      const fieldKeys = ['nozzle', 'bed', 'time', 'progress'].filter(r => visible.includes(r));
+      // preserve user-defined order; skip 'status' (shown in header)
+      const fieldKeys = visible.filter(r => ['nozzle', 'bed', 'time', 'progress'].includes(r));
 
       const hdrH = 20;
       const bodyH = IH - hdrH;
       const nCols = fieldKeys.length <= 1 ? 1 : 2;
       const nRows = Math.ceil(fieldKeys.length / Math.max(1, nCols));
       const cellH = nRows > 0 ? bodyH / nRows : bodyH;
-      const valueFs = Math.max(10, Math.min(cellH * 0.50, 44));
+      const valueFsAuto = Math.max(10, Math.min(cellH * 0.50, 44));
+      const valueFs = format.textSize ? Number(format.textSize) : valueFsAuto;
       const fldFs   = Math.max(7,  Math.min(cellH * 0.20, 10));
 
       const MOCK_FIELDS = {
