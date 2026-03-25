@@ -164,6 +164,15 @@ export const WIDGET_TYPES = [
     format: true,
     extra: ['program_entity', 'time_entity'],
   },
+  {
+    type: 'mediaplayer',
+    label: 'Media Player',
+    icon: '🎵',
+    description: 'Song title, artist, play/pause, next/previous, seekable progress bar',
+    fields: ['entity_id', 'label', 'format'],
+    format: true,
+    extra: [],
+  },
 ];
 
 // Common format fields for all widgets
