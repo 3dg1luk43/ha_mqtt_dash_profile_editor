@@ -230,18 +230,27 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
     case 'climate': {
       const modes = widget.modes || ['off', 'heat', 'cool', 'auto'];
       const stateFormats = widget.state_formats || {};
-      const tempSize = `${Math.max(13, Math.min(22, IH * 0.24))}px`;
-      const btnH = Math.max(14, Math.min(22, IH * 0.2));
+      const titleH = 14;
+      const segH = 30;
+      const clRowH = Math.max(32, IH - titleH - 4 - segH - 4);
+      const clBtnW = Math.min(clRowH, IW * 0.22);
+      const clFontSize = Math.max(18, clRowH * 0.52);
+      const valFontSize = Math.max(14, clRowH * 0.38);
       const btnFontSize = Math.max(8, Math.min(10, IW / modes.length * 0.55));
 
       return (
-        <div style={{ ...colStyle, gap: 3 }}>
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', padding: '4px 6px', boxSizing: 'border-box', gap: 3 }}>
           <TitleLabel text={displayLabel} />
-          <span style={{ color: textColor, fontSize: tempSize, fontWeight: 'bold', textAlign: 'center', flexShrink: 0, lineHeight: 1.2 }}>
-            -- / --
-          </span>
-          {/* Mode selector */}
-          <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+          {/* Temp row: [-]  cur / tar  [+] — fills available space */}
+          <div style={{ display: 'flex', alignItems: 'center', flex: 1, minHeight: 0, gap: 2 }}>
+            <div style={{ width: clBtnW, alignSelf: 'stretch', background: 'rgba(255,255,255,0.1)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: `${clFontSize}px`, fontWeight: 'bold', flexShrink: 0 }}>−</div>
+            <span style={{ flex: 1, color: textColor, fontSize: `${valFontSize}px`, fontWeight: 'bold', textAlign: 'center', lineHeight: 1.2, overflow: 'hidden' }}>
+              -- / --
+            </span>
+            <div style={{ width: clBtnW, alignSelf: 'stretch', background: 'rgba(255,255,255,0.1)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: `${clFontSize}px`, fontWeight: 'bold', flexShrink: 0 }}>+</div>
+          </div>
+          {/* Mode selector pinned to bottom */}
+          <div style={{ display: 'flex', gap: 2, flexShrink: 0, height: segH }}>
             {modes.slice(0, 6).map((m, i) => {
               const mFmt = stateFormats[m] || {};
               return (
@@ -250,18 +259,13 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
                   color: mFmt.textColor || '#bbb',
                   fontSize: `${btnFontSize}px`,
                   textAlign: 'center', borderRadius: 3,
-                  height: btnH, lineHeight: `${btnH}px`,
+                  lineHeight: `${segH}px`,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   {m}
                 </div>
               );
             })}
-          </div>
-          {/* Temp buttons */}
-          <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
-            <div style={{ flex: 1, background: 'rgba(255,255,255,0.1)', textAlign: 'center', borderRadius: 4, fontSize: '14px', color: '#aaa', height: btnH, lineHeight: `${btnH}px` }}>−</div>
-            <div style={{ flex: 1, background: 'rgba(255,255,255,0.1)', textAlign: 'center', borderRadius: 4, fontSize: '14px', color: '#aaa', height: btnH, lineHeight: `${btnH}px` }}>+</div>
           </div>
         </div>
       );
