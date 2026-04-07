@@ -73,6 +73,8 @@ export function buildProfile(state) {
   if (state.navbar_style && Object.keys(state.navbar_style).length > 0) {
     profile.ui.navbar_style = { ...state.navbar_style };
   }
+  if (state.navbar_show_battery === false) profile.ui.navbar_show_battery = false;
+  if (state.navbar_show_keepawake === false) profile.ui.navbar_show_keepawake = false;
 
   return profile;
 }
@@ -129,6 +131,8 @@ export function profileToState(profile) {
       pages,
       navbar_edge: ui.navbar_edge ?? 'bottom',
       navbar_style: (ui.navbar_style && typeof ui.navbar_style === 'object') ? ui.navbar_style : {},
+      navbar_show_battery: ui.navbar_show_battery !== false,
+      navbar_show_keepawake: ui.navbar_show_keepawake !== false,
       device_settings: Object.keys(deviceSettings).length > 0 ? deviceSettings : { keep_awake: true },
     };
   }

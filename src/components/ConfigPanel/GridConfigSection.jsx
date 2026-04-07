@@ -14,7 +14,7 @@ const NAV_STYLE_FIELDS = [
 ];
 
 export default function GridConfigSection() {
-  const { grid, banner, setBanner, setGridConfig, setPageGrid, setNavbarEdge, setNavbarStyle, navbar_edge, navbar_style = {}, device_settings = {}, setDeviceSettings, device, orientation, pages, activePageIndex } = useEditorStore();
+  const { grid, banner, setBanner, setGridConfig, setPageGrid, setNavbarEdge, setNavbarStyle, navbar_edge, navbar_style = {}, navbar_show_battery = true, navbar_show_keepawake = true, setNavbarShowBattery, setNavbarShowKeepAwake, device_settings = {}, setDeviceSettings, device, orientation, pages, activePageIndex } = useEditorStore();
   const [navStyleOpen, setNavStyleOpen] = useState(false);
   const [openPicker, setOpenPicker] = useState(null);
 
@@ -130,6 +130,28 @@ export default function GridConfigSection() {
             </button>
           ))}
         </div>
+      </Field>
+
+      <Field label="Keep-awake button">
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={navbar_show_keepawake}
+            onChange={(e) => setNavbarShowKeepAwake(e.target.checked)}
+          />
+          <span style={{ fontSize: 11, color: '#666' }}>Show in nav bar</span>
+        </label>
+      </Field>
+
+      <Field label="Battery indicator">
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={navbar_show_battery}
+            onChange={(e) => setNavbarShowBattery(e.target.checked)}
+          />
+          <span style={{ fontSize: 11, color: '#666' }}>Show in nav bar</span>
+        </label>
       </Field>
 
       {/* Nav bar style colors */}

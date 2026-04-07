@@ -42,6 +42,8 @@ export const useEditorStore = create(
       banner: '',
       navbar_edge: 'bottom',
       navbar_style: {},
+      navbar_show_battery: true,
+      navbar_show_keepawake: true,
       device_settings: { keep_awake: true },
       history: [],
       future: [],
@@ -176,6 +178,8 @@ export const useEditorStore = create(
         Object.keys(next).forEach((k) => { if (!next[k]) delete next[k]; });
         return { navbar_style: next };
       }),
+      setNavbarShowBattery: (v) => set({ navbar_show_battery: v }),
+      setNavbarShowKeepAwake: (v) => set({ navbar_show_keepawake: v }),
       setDeviceSettings: (patch) => set((s) => ({ device_settings: { ...s.device_settings, ...patch } })),
       setWidgets: (widgets) => set((s) => ({  // used by import — replaces active page widgets
         pages: s.pages.map((p, i) => i === s.activePageIndex ? { ...p, widgets } : p),
@@ -224,6 +228,8 @@ export const useEditorStore = create(
         pages: s.pages,
         banner: s.banner,
         navbar_edge: s.navbar_edge,
+        navbar_show_battery: s.navbar_show_battery,
+        navbar_show_keepawake: s.navbar_show_keepawake,
       }),
       merge: (persisted, current) => {
         const merged = { ...current, ...persisted };

@@ -27,7 +27,7 @@ export default function App() {
   const [modal, setModal] = useState(null);
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOME_KEY));
   const [toast, setToast] = useState(null);
-  const { addWidget, moveWidget, pages, activePageIndex, grid, device, orientation, navbar_edge, undo, redo, setGridConfig, setPages, setBanner, setNavbarEdge, setDeviceSettings } = useEditorStore();
+  const { addWidget, moveWidget, pages, activePageIndex, grid, device, orientation, navbar_edge, undo, redo, setGridConfig, setPages, setBanner, setNavbarEdge, setNavbarShowBattery, setNavbarShowKeepAwake, setDeviceSettings } = useEditorStore();
   const haStore = useHaStore();
   const widgets = pages[activePageIndex]?.widgets ?? [];
 
@@ -47,6 +47,8 @@ export default function App() {
         setPages(s.pages);
         setBanner(s.banner ?? '');
         if (s.navbar_edge) setNavbarEdge(s.navbar_edge);
+        setNavbarShowBattery(s.navbar_show_battery !== false);
+        setNavbarShowKeepAwake(s.navbar_show_keepawake !== false);
         if (s.device_settings) setDeviceSettings(s.device_settings);
       }
     } catch (_) { /* ignore malformed share links */ }
