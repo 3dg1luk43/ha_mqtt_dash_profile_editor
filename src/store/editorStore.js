@@ -230,6 +230,7 @@ export const useEditorStore = create(
         navbar_edge: s.navbar_edge,
         navbar_show_battery: s.navbar_show_battery,
         navbar_show_keepawake: s.navbar_show_keepawake,
+        device_settings: s.device_settings,
       }),
       merge: (persisted, current) => {
         const merged = { ...current, ...persisted };

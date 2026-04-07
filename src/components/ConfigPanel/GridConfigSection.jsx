@@ -231,6 +231,20 @@ export default function GridConfigSection() {
         </div>
       </Field>
 
+      <Field label="Clock size">
+        <select
+          value={device_settings.screensaver_font_size ?? 144}
+          onChange={(e) => setDeviceSettings({ screensaver_font_size: Number(e.target.value) })}
+          style={{ fontSize: 12, padding: '3px 4px', border: '1px solid #ddd', borderRadius: 4, background: '#fafafa' }}
+        >
+          <option value={96}>S (96pt)</option>
+          <option value={144}>M (144pt)</option>
+          <option value={192}>L (192pt)</option>
+          <option value={240}>XL (240pt)</option>
+          <option value={288}>XXL (288pt)</option>
+        </select>
+      </Field>
+
       <Field label="Banner text">
         <input
           type="text"

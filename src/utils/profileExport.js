@@ -60,6 +60,8 @@ export function buildProfile(state) {
     }
     const sst = state.device_settings.screensaver_timeout;
     if (typeof sst === 'number' && sst > 0) devOut.screensaver_timeout = sst;
+    const ssf = state.device_settings.screensaver_font_size;
+    if (typeof ssf === 'number' && ssf > 0) devOut.screensaver_font_size = ssf;
     if (Object.keys(devOut).length > 0) profile.device = devOut;
   }
 
@@ -126,6 +128,7 @@ export function profileToState(profile) {
     if (profile.device && typeof profile.device === 'object') {
       if (typeof profile.device.keep_awake === 'boolean') deviceSettings.keep_awake = profile.device.keep_awake;
       if (typeof profile.device.screensaver_timeout === 'number') deviceSettings.screensaver_timeout = profile.device.screensaver_timeout;
+      if (typeof profile.device.screensaver_font_size === 'number') deviceSettings.screensaver_font_size = profile.device.screensaver_font_size;
     }
 
     return {
