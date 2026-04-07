@@ -14,7 +14,7 @@ const NAV_STYLE_FIELDS = [
 ];
 
 export default function GridConfigSection() {
-  const { grid, banner, setBanner, setGridConfig, setPageGrid, setNavbarEdge, setNavbarStyle, navbar_edge, navbar_style = {}, device, orientation, pages, activePageIndex } = useEditorStore();
+  const { grid, banner, setBanner, setGridConfig, setPageGrid, setNavbarEdge, setNavbarStyle, navbar_edge, navbar_style = {}, device_settings = {}, setDeviceSettings, device, orientation, pages, activePageIndex } = useEditorStore();
   const [navStyleOpen, setNavStyleOpen] = useState(false);
   const [openPicker, setOpenPicker] = useState(null);
 
@@ -177,6 +177,19 @@ export default function GridConfigSection() {
           </div>
         )}
       </div>
+
+      {/* Device settings */}
+      <h3 style={{ ...sectionTitle, marginTop: 14 }}>Device Settings</h3>
+      <Field label="Keep screen awake">
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={device_settings.keep_awake ?? true}
+            onChange={(e) => setDeviceSettings({ keep_awake: e.target.checked })}
+          />
+          <span style={{ fontSize: 11, color: '#666' }}>On by default (can be toggled on device)</span>
+        </label>
+      </Field>
 
       <Field label="Banner text">
         <input

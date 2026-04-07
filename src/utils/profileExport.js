@@ -52,6 +52,15 @@ export function buildProfile(state) {
   const profile = {};
   if (state.banner) profile.banner = state.banner;
 
+  // Device-level settings (keep_awake etc.)
+  if (state.device_settings && Object.keys(state.device_settings).length > 0) {
+    const devOut = {};
+    if (typeof state.device_settings.keep_awake === 'boolean') {
+      devOut.keep_awake = state.device_settings.keep_awake;
+    }
+    if (Object.keys(devOut).length > 0) profile.device = devOut;
+  }
+
   profile.ui = {
     navbar_edge: state.navbar_edge ?? 'bottom',
     grid: exportGrid(state.grid),
@@ -109,12 +118,18 @@ export function profileToState(profile) {
       pages = [{ id: `page_${Date.now()}`, name: 'Main', widgets: [] }];
     }
 
+    const deviceSettings = {};
+    if (profile.device && typeof profile.device === 'object') {
+      if (typeof profile.device.keep_awake === 'boolean') deviceSettings.keep_awake = profile.device.keep_awake;
+    }
+
     return {
       banner: profile.banner ?? '',
       grid,
       pages,
       navbar_edge: ui.navbar_edge ?? 'bottom',
       navbar_style: (ui.navbar_style && typeof ui.navbar_style === 'object') ? ui.navbar_style : {},
+      device_settings: Object.keys(deviceSettings).length > 0 ? deviceSettings : { keep_awake: true },
     };
   }
 
@@ -125,6 +140,7 @@ export function profileToState(profile) {
     banner: profile.banner ?? '',
     grid,
     pages: [{ id: `page_${Date.now()}`, name: 'Main', widgets }],
+    device_settings: { keep_awake: true },
   };
 }
 

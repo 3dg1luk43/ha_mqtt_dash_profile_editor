@@ -42,6 +42,7 @@ export const useEditorStore = create(
       banner: '',
       navbar_edge: 'bottom',
       navbar_style: {},
+      device_settings: { keep_awake: true },
       history: [],
       future: [],
 
@@ -175,6 +176,7 @@ export const useEditorStore = create(
         Object.keys(next).forEach((k) => { if (!next[k]) delete next[k]; });
         return { navbar_style: next };
       }),
+      setDeviceSettings: (patch) => set((s) => ({ device_settings: { ...s.device_settings, ...patch } })),
       setWidgets: (widgets) => set((s) => ({  // used by import — replaces active page widgets
         pages: s.pages.map((p, i) => i === s.activePageIndex ? { ...p, widgets } : p),
       })),
