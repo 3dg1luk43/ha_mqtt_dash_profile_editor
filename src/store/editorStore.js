@@ -44,7 +44,7 @@ export const useEditorStore = create(
       navbar_style: {},
       navbar_show_battery: true,
       navbar_show_keepawake: true,
-      device_settings: { keep_awake: true },
+      device_settings: { keep_awake: true, screensaver_timeout: 0 },
       history: [],
       future: [],
 

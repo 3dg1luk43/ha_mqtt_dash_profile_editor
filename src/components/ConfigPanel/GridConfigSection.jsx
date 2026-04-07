@@ -213,6 +213,24 @@ export default function GridConfigSection() {
         </label>
       </Field>
 
+      <Field label="Screensaver after">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <select
+            value={device_settings.screensaver_timeout ?? 0}
+            onChange={(e) => setDeviceSettings({ screensaver_timeout: Number(e.target.value) })}
+            style={{ fontSize: 12, padding: '3px 4px', border: '1px solid #ddd', borderRadius: 4, background: '#fafafa' }}
+          >
+            <option value={0}>Off</option>
+            <option value={30}>30 sec</option>
+            <option value={60}>1 min</option>
+            <option value={120}>2 min</option>
+            <option value={300}>5 min</option>
+            <option value={600}>10 min</option>
+          </select>
+          <span style={{ fontSize: 11, color: '#888' }}>of inactivity</span>
+        </div>
+      </Field>
+
       <Field label="Banner text">
         <input
           type="text"

@@ -58,6 +58,8 @@ export function buildProfile(state) {
     if (typeof state.device_settings.keep_awake === 'boolean') {
       devOut.keep_awake = state.device_settings.keep_awake;
     }
+    const sst = state.device_settings.screensaver_timeout;
+    if (typeof sst === 'number' && sst > 0) devOut.screensaver_timeout = sst;
     if (Object.keys(devOut).length > 0) profile.device = devOut;
   }
 
@@ -123,6 +125,7 @@ export function profileToState(profile) {
     const deviceSettings = {};
     if (profile.device && typeof profile.device === 'object') {
       if (typeof profile.device.keep_awake === 'boolean') deviceSettings.keep_awake = profile.device.keep_awake;
+      if (typeof profile.device.screensaver_timeout === 'number') deviceSettings.screensaver_timeout = profile.device.screensaver_timeout;
     }
 
     return {
@@ -133,7 +136,9 @@ export function profileToState(profile) {
       navbar_style: (ui.navbar_style && typeof ui.navbar_style === 'object') ? ui.navbar_style : {},
       navbar_show_battery: ui.navbar_show_battery !== false,
       navbar_show_keepawake: ui.navbar_show_keepawake !== false,
-      device_settings: Object.keys(deviceSettings).length > 0 ? deviceSettings : { keep_awake: true },
+      device_settings: Object.keys(deviceSettings).length > 0
+        ? { screensaver_timeout: 0, ...deviceSettings }
+        : { keep_awake: true, screensaver_timeout: 0 },
     };
   }
 
