@@ -591,9 +591,8 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
 
     // ---- cover (blinds / shades / garage) --------------------------------
     case 'cover': {
-      // When no controls are explicitly chosen the iOS app auto-detects from
-      // the entity's features; the editor can't know those, so the preview
-      // shows a representative buttons+slider set as a hint.
+      // No explicit controls => iOS auto-detects from features; the editor can't
+      // know those, so preview a representative buttons+slider set.
       const explicit = Array.isArray(widget.cover_controls) && widget.cover_controls.length > 0;
       const controls = explicit ? widget.cover_controls : ['buttons', 'slider'];
       const showButtons = controls.includes('buttons');
@@ -607,66 +606,80 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
       const presets = (Array.isArray(widget.position_presets) && widget.position_presets.length)
         ? widget.position_presets : [0, 25, 75, 100];
 
-      const btn = (txt, key) => (
-        <div key={key} style={{
-          flex: horiz ? 1 : 'none',
-          height: horiz ? '100%' : 22,
-          minWidth: horiz ? 0 : '100%',
-          background: 'rgba(255,255,255,0.10)', borderRadius: 4,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#cfcfcf', fontSize: 14, fontWeight: 'bold',
-        }}>{txt}</div>
-      );
-      const btnSpecs = [['▲', 'o']];
-      btnSpecs.push(['■', 's']);
-      btnSpecs.push(['▼', 'c']);
-
-      const rowGap = 4;
       const titleH = widget.label ? 16 : 0;
+      const statusH = Math.max(20, Math.min((IH - titleH) * 0.28, 50));
+
+      const Slat = ({ open }) => (
+        <svg width="20" height="16" viewBox="0 0 20 16" style={{ display: 'block' }}>
+          {[4, 8, 12].map((y, i) => (
+            <line key={i} x1="3" y1={y + (open ? 2 : -2)} x2="17" y2={y + (open ? -2 : 2)}
+              stroke="#cfcfcf" strokeWidth="1.6" strokeLinecap="round" />
+          ))}
+        </svg>
+      );
+      const Pill = ({ children, extra }) => (
+        <div style={{ background: 'rgba(255,255,255,0.10)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cfcfcf', fontWeight: 'bold', ...extra }}>{children}</div>
+      );
+      const HBar = ({ pct = 60 }) => (
+        <div style={{ width: '100%', height: 5, background: 'rgba(255,255,255,0.12)', borderRadius: 4 }}>
+          <div style={{ width: `${pct}%`, height: '100%', background: 'rgba(255,255,255,0.45)', borderRadius: 4 }} />
+        </div>
+      );
+      const VBar = ({ pct = 60 }) => (
+        <div style={{ width: 6, height: '100%', background: 'rgba(255,255,255,0.12)', borderRadius: 4, position: 'relative' }}>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${pct}%`, background: 'rgba(255,255,255,0.45)', borderRadius: 4 }} />
+        </div>
+      );
+      const presetRow = (
+        <div style={{ display: 'flex', gap: 3, flexShrink: 0, height: 20 }}>
+          {presets.slice(0, 6).map((p, i) => (
+            <Pill key={i} extra={{ flex: 1, fontSize: 9, fontWeight: 'normal', borderRadius: 10, color: '#bbb' }}>{p}%</Pill>
+          ))}
+        </div>
+      );
+      const mainTxts = ['▲', '■', '▼'];
 
       return (
-        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', padding: '4px 6px', boxSizing: 'border-box', gap: rowGap }}>
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', padding: '4px 6px', boxSizing: 'border-box', gap: 4 }}>
           {widget.label && <TitleLabel text={widget.label} />}
-          {/* state fills the middle */}
-          <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ color: textColor, fontSize: Math.max(13, Math.min(22, (IH - titleH) * 0.22)), fontWeight: 'bold' }}>
-              CLOSED&nbsp;0%
-            </span>
+          <div style={{ height: statusH, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ color: textColor, fontSize: Math.max(13, Math.min(20, statusH * 0.5)), fontWeight: 'bold' }}>CLOSED&nbsp;0%</span>
           </div>
-          {showTilt && (
-            <div style={{ display: 'flex', gap: rowGap, flexShrink: 0, height: 22 }}>
-              <div style={{ width: 30, background: 'rgba(255,255,255,0.10)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 12 }}>⧉</div>
-              <div style={{ width: 30, background: 'rgba(255,255,255,0.10)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 12 }}>⧈</div>
-              <div style={{ flex: 1, alignSelf: 'center', height: 5, background: 'rgba(255,255,255,0.12)', borderRadius: 4 }}>
-                <div style={{ width: '40%', height: '100%', background: 'rgba(255,255,255,0.45)', borderRadius: 4 }} />
-              </div>
-            </div>
-          )}
-          {showSlider && (
-            <div style={{ flexShrink: 0, height: 12, display: 'flex', alignItems: 'center' }}>
-              <div style={{ width: '100%', height: 5, background: 'rgba(255,255,255,0.12)', borderRadius: 4 }}>
-                <div style={{ width: '60%', height: '100%', background: 'rgba(255,255,255,0.45)', borderRadius: 4 }} />
-              </div>
-            </div>
-          )}
-          {showPresets && (
-            <div style={{ display: 'flex', gap: 3, flexShrink: 0, height: 20 }}>
-              {presets.slice(0, 6).map((p, i) => (
-                <div key={i} style={{ flex: 1, background: 'rgba(255,255,255,0.10)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 9 }}>
-                  {p}%
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {horiz ? (
+              <>
+                {showSlider && <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}><HBar /></div>}
+                {showPresets && presetRow}
+                {showTilt && (
+                  <div style={{ flex: 1, display: 'flex', gap: 4 }}>
+                    <Pill extra={{ width: 34 }}><Slat open /></Pill>
+                    <Pill extra={{ width: 34 }}><Slat /></Pill>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}><HBar pct={40} /></div>
+                  </div>
+                )}
+                {showButtons && (
+                  <div style={{ flex: 1, display: 'flex', gap: 4 }}>
+                    {mainTxts.map((t, i) => <Pill key={i} extra={{ flex: 1, fontSize: 14 }}>{t}</Pill>)}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 5 }}>
+                  {showSlider && <div style={{ width: 18, display: 'flex', justifyContent: 'center' }}><VBar /></div>}
+                  {showTilt && <div style={{ width: 18, display: 'flex', justifyContent: 'center' }}><VBar pct={40} /></div>}
+                  {(showButtons || showTilt) && (
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {showButtons && mainTxts.map((t, i) => <Pill key={i} extra={{ flex: 1, fontSize: 14 }}>{t}</Pill>)}
+                      {showTilt && <Pill extra={{ flex: 1 }}><Slat open /></Pill>}
+                      {showTilt && <Pill extra={{ flex: 1 }}><Slat /></Pill>}
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-          {showButtons && (
-            <div style={{
-              display: 'flex', flexDirection: horiz ? 'row' : 'column',
-              gap: rowGap, flexShrink: 0,
-              height: horiz ? 28 : 'auto',
-            }}>
-              {btnSpecs.map(([t, k]) => btn(t, k))}
-            </div>
-          )}
+                {showPresets && presetRow}
+              </>
+            )}
+          </div>
         </div>
       );
     }
