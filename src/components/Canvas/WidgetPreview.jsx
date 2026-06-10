@@ -589,6 +589,88 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
       );
     }
 
+    // ---- cover (blinds / shades / garage) --------------------------------
+    case 'cover': {
+      // When no controls are explicitly chosen the iOS app auto-detects from
+      // the entity's features; the editor can't know those, so the preview
+      // shows a representative buttons+slider set as a hint.
+      const explicit = Array.isArray(widget.cover_controls) && widget.cover_controls.length > 0;
+      const controls = explicit ? widget.cover_controls : ['buttons', 'slider'];
+      const showButtons = controls.includes('buttons');
+      const showSlider = controls.includes('slider');
+      const showPresets = controls.includes('presets');
+      const showTilt = controls.includes('tilt');
+      const layoutMode = widget.cover_layout || 'auto';
+      const horiz = layoutMode === 'horizontal' ? true
+        : layoutMode === 'vertical' ? false
+        : (tileW >= tileH);
+      const presets = (Array.isArray(widget.position_presets) && widget.position_presets.length)
+        ? widget.position_presets : [0, 25, 75, 100];
+
+      const btn = (txt, key) => (
+        <div key={key} style={{
+          flex: horiz ? 1 : 'none',
+          height: horiz ? '100%' : 22,
+          minWidth: horiz ? 0 : '100%',
+          background: 'rgba(255,255,255,0.10)', borderRadius: 4,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#cfcfcf', fontSize: 14, fontWeight: 'bold',
+        }}>{txt}</div>
+      );
+      const btnSpecs = [['▲', 'o']];
+      btnSpecs.push(['■', 's']);
+      btnSpecs.push(['▼', 'c']);
+
+      const rowGap = 4;
+      const titleH = widget.label ? 16 : 0;
+
+      return (
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', padding: '4px 6px', boxSizing: 'border-box', gap: rowGap }}>
+          {widget.label && <TitleLabel text={widget.label} />}
+          {/* state fills the middle */}
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ color: textColor, fontSize: Math.max(13, Math.min(22, (IH - titleH) * 0.22)), fontWeight: 'bold' }}>
+              CLOSED&nbsp;0%
+            </span>
+          </div>
+          {showTilt && (
+            <div style={{ display: 'flex', gap: rowGap, flexShrink: 0, height: 22 }}>
+              <div style={{ width: 30, background: 'rgba(255,255,255,0.10)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 12 }}>⧉</div>
+              <div style={{ width: 30, background: 'rgba(255,255,255,0.10)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 12 }}>⧈</div>
+              <div style={{ flex: 1, alignSelf: 'center', height: 5, background: 'rgba(255,255,255,0.12)', borderRadius: 4 }}>
+                <div style={{ width: '40%', height: '100%', background: 'rgba(255,255,255,0.45)', borderRadius: 4 }} />
+              </div>
+            </div>
+          )}
+          {showSlider && (
+            <div style={{ flexShrink: 0, height: 12, display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: '100%', height: 5, background: 'rgba(255,255,255,0.12)', borderRadius: 4 }}>
+                <div style={{ width: '60%', height: '100%', background: 'rgba(255,255,255,0.45)', borderRadius: 4 }} />
+              </div>
+            </div>
+          )}
+          {showPresets && (
+            <div style={{ display: 'flex', gap: 3, flexShrink: 0, height: 20 }}>
+              {presets.slice(0, 6).map((p, i) => (
+                <div key={i} style={{ flex: 1, background: 'rgba(255,255,255,0.10)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 9 }}>
+                  {p}%
+                </div>
+              ))}
+            </div>
+          )}
+          {showButtons && (
+            <div style={{
+              display: 'flex', flexDirection: horiz ? 'row' : 'column',
+              gap: rowGap, flexShrink: 0,
+              height: horiz ? 28 : 'auto',
+            }}>
+              {btnSpecs.map(([t, k]) => btn(t, k))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // ---- fallback --------------------------------------------------------
     default: {
       const typeDef = WIDGET_TYPES.find((t) => t.type === type) ?? { icon: '?', label: type };
