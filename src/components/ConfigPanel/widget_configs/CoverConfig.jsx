@@ -1,41 +1,65 @@
 import EntityAutocomplete from '../EntityAutocomplete';
 
-const CONTROL_OPTIONS = [
-  ['buttons', 'Open / Stop / Close buttons'],
-  ['slider', 'Position slider'],
-  ['presets', 'Position preset buttons'],
-  ['tilt', 'Tilt controls'],
+// All individually-selectable cover controls (token -> label).
+const ALL_ITEMS = [
+  ['open', 'Open ▲'],
+  ['close', 'Close ▼'],
+  ['stop', 'Stop ■'],
+  ['position', 'Position slider'],
+  ['presets', 'Position presets'],
+  ['tilt_open', 'Tilt open'],
+  ['tilt_close', 'Tilt close'],
+  ['tilt_slider', 'Tilt slider'],
 ];
-
+const LABELS = Object.fromEntries(ALL_ITEMS);
 const DEFAULT_PRESETS = [0, 25, 75, 100];
 
+// Expand the legacy coarse groups into granular tokens (for migrating old widgets).
+function expandGroups(groups) {
+  const out = [];
+  for (const g of groups || []) {
+    if (g === 'buttons') out.push('open', 'stop', 'close');
+    else if (g === 'slider') out.push('position');
+    else if (g === 'presets') out.push('presets');
+    else if (g === 'tilt') out.push('tilt_open', 'tilt_close', 'tilt_slider');
+  }
+  return out;
+}
+
 export default function CoverConfig({ widget, onChange }) {
-  const controls = Array.isArray(widget.cover_controls) ? widget.cover_controls : [];
+  const items = Array.isArray(widget.cover_items) && widget.cover_items.length
+    ? widget.cover_items
+    : (Array.isArray(widget.cover_controls) ? expandGroups(widget.cover_controls) : []);
   const layout = widget.cover_layout || 'auto';
   const presets = Array.isArray(widget.position_presets) ? widget.position_presets : DEFAULT_PRESETS;
+  const enabled = new Set(items);
+  const available = ALL_ITEMS.filter(([k]) => !enabled.has(k));
 
-  function toggleControl(key, on) {
-    const next = on ? [...new Set([...controls, key])] : controls.filter((c) => c !== key);
-    onChange({ cover_controls: next });
-  }
-
-  function setPresetsFromText(text) {
-    const vals = text
-      .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => Number.isFinite(n))
-      .map((n) => Math.max(0, Math.min(100, n)));
+  // Writing always migrates to cover_items and drops the legacy cover_controls key.
+  const setItems = (next) => onChange({ cover_items: next, cover_controls: undefined });
+  const add = (k) => setItems([...items, k]);
+  const remove = (k) => setItems(items.filter((x) => x !== k));
+  const move = (i, d) => {
+    const j = i + d;
+    if (j < 0 || j >= items.length) return;
+    const next = items.slice();
+    [next[i], next[j]] = [next[j], next[i]];
+    setItems(next);
+  };
+  const setPresetsFromText = (text) => {
+    const vals = text.split(',').map((s) => parseInt(s.trim(), 10))
+      .filter((n) => Number.isFinite(n)).map((n) => Math.max(0, Math.min(100, n)));
     onChange({ position_presets: vals });
-  }
-
-  const presetsEnabled = controls.includes('presets');
+  };
 
   return (
     <div>
       <h3 style={sectionTitle}>Cover</h3>
-      <p style={{ fontSize: 11, color: '#888', marginBottom: 10, lineHeight: 1.4 }}>
-        Binds to a <code>cover.*</code> entity (blinds, shades, garage doors). The
-        entity must be in <code>mirror_entities</code> (or use auto-mirror).
+      <p style={hint}>
+        Binds to a <code>cover.*</code> entity. Pick the controls to show and order them
+        (top→bottom in tall tiles, row sequence in wide tiles). Leave the list empty to
+        <strong> auto-detect</strong> from the cover&apos;s <code>supported_features</code>.
+        The entity must be in <code>mirror_entities</code> (or use auto-mirror).
       </p>
 
       <div style={{ marginBottom: 10 }}>
@@ -47,40 +71,42 @@ export default function CoverConfig({ widget, onChange }) {
         />
       </div>
 
-      <label style={labelStyle}>Controls</label>
-      <p style={{ fontSize: 10, color: '#999', margin: '0 0 6px', lineHeight: 1.4 }}>
-        Leave all unchecked to <strong>auto-detect</strong> from the cover&apos;s
-        <code> supported_features</code>. Check options to force a specific set — they
-        stack and lay out elastically (horizontal in wide tiles, vertical in tall ones).
-      </p>
-      <div style={{ marginBottom: 10 }}>
-        {CONTROL_OPTIONS.map(([key, lbl]) => (
-          <label key={key} style={checkRow}>
-            <input
-              type="checkbox"
-              checked={controls.includes(key)}
-              onChange={(e) => toggleControl(key, e.target.checked)}
-              style={{ width: 15, height: 15 }}
-            />
-            <span style={{ fontSize: 12, color: '#444' }}>{lbl}</span>
-          </label>
+      <label style={labelStyle}>Controls &amp; order</label>
+      {items.length === 0 && (
+        <p style={{ ...hint, color: '#a98' }}>No controls selected — the app auto-detects from the entity.</p>
+      )}
+      <div style={{ marginBottom: 8 }}>
+        {items.map((k, i) => (
+          <div key={k} style={rowStyle}>
+            <span style={{ flex: 1, fontSize: 12, color: '#333' }}>{LABELS[k] || k}</span>
+            <button type="button" style={iconBtn} disabled={i === 0} onClick={() => move(i, -1)} title="Move up">↑</button>
+            <button type="button" style={iconBtn} disabled={i === items.length - 1} onClick={() => move(i, 1)} title="Move down">↓</button>
+            <button type="button" style={{ ...iconBtn, color: '#c33' }} onClick={() => remove(k)} title="Remove">✕</button>
+          </div>
         ))}
       </div>
 
+      {available.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          <label style={labelStyle}>Add control</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {available.map(([k, lbl]) => (
+              <button type="button" key={k} style={addBtn} onClick={() => add(k)}>+ {lbl}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ marginBottom: 10 }}>
-        <label style={labelStyle}>Button layout</label>
-        <select
-          value={layout}
-          onChange={(e) => onChange({ cover_layout: e.target.value })}
-          style={selectStyle}
-        >
+        <label style={labelStyle}>Layout</label>
+        <select value={layout} onChange={(e) => onChange({ cover_layout: e.target.value })} style={selectStyle}>
           <option value="auto">Auto (from tile shape)</option>
-          <option value="horizontal">Horizontal</option>
-          <option value="vertical">Vertical</option>
+          <option value="horizontal">Horizontal (rows)</option>
+          <option value="vertical">Vertical (upright sliders)</option>
         </select>
       </div>
 
-      {presetsEnabled && (
+      {enabled.has('presets') && (
         <div style={{ marginBottom: 8 }}>
           <label style={labelStyle}>Position presets (%)</label>
           <input
@@ -90,9 +116,6 @@ export default function CoverConfig({ widget, onChange }) {
             placeholder="0, 25, 75, 100"
             style={inputStyle}
           />
-          <p style={{ fontSize: 10, color: '#999', margin: '3px 0 0' }}>
-            Comma-separated percentages (0–100). Each becomes a button that sets the cover position.
-          </p>
         </div>
       )}
     </div>
@@ -100,7 +123,10 @@ export default function CoverConfig({ widget, onChange }) {
 }
 
 const sectionTitle = { fontSize: 13, fontWeight: 600, color: '#333', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' };
+const hint = { fontSize: 11, color: '#888', marginBottom: 10, lineHeight: 1.4 };
 const labelStyle = { fontSize: 11, color: '#666', display: 'block', marginBottom: 2 };
-const checkRow = { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5, cursor: 'pointer' };
+const rowStyle = { display: 'flex', alignItems: 'center', gap: 4, padding: '3px 4px', marginBottom: 3, background: '#f4f4f6', borderRadius: 4 };
+const iconBtn = { width: 22, height: 22, border: '1px solid #ccc', borderRadius: 4, background: '#fff', cursor: 'pointer', fontSize: 12, lineHeight: 1, padding: 0 };
+const addBtn = { border: '1px dashed #bbb', borderRadius: 4, background: '#fafafa', cursor: 'pointer', fontSize: 11, padding: '3px 7px', color: '#555' };
 const selectStyle = { width: '100%', padding: '5px 6px', fontSize: 12, border: '1px solid #ccc', borderRadius: 4, boxSizing: 'border-box' };
 const inputStyle = { width: '100%', padding: '5px 6px', fontSize: 12, border: '1px solid #ccc', borderRadius: 4, boxSizing: 'border-box' };

@@ -10,7 +10,7 @@ const WIDGET_EXTRA_KEYS = [
   'configurable',  // timer
   'temp_entity', 'target_entity', 'program_entity',  // sousvide / appliance extra entities
   'dimmable',  // light: false hides brightness slider (default true)
-  'cover_controls', 'cover_layout', 'position_presets',  // cover
+  'cover_items', 'cover_controls', 'cover_layout', 'position_presets',  // cover
 ];
 
 function exportWidget(w) {
@@ -24,7 +24,7 @@ function exportWidget(w) {
   for (const key of WIDGET_EXTRA_KEYS) {
     if (key === 'overlay_button') {
       if (w.overlay_button?.entity_id) out.overlay_button = { ...w.overlay_button };
-    } else if (key === 'attrs' || key === 'modes' || key === 'visible_rows' || key === 'cover_controls' || key === 'position_presets') {
+    } else if (key === 'attrs' || key === 'modes' || key === 'visible_rows' || key === 'cover_controls' || key === 'cover_items' || key === 'position_presets') {
       if (w[key]?.length > 0) out[key] = w[key];
     } else if (key === 'attr_units' || key === 'state_formats') {
       if (w[key] && Object.keys(w[key]).length > 0) out[key] = { ...w[key] };

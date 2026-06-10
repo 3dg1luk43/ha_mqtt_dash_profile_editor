@@ -591,23 +591,30 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
 
     // ---- cover (blinds / shades / garage) --------------------------------
     case 'cover': {
-      // No explicit controls => iOS auto-detects from features; the editor can't
-      // know those, so preview a representative buttons+slider set.
-      const explicit = Array.isArray(widget.cover_controls) && widget.cover_controls.length > 0;
-      const controls = explicit ? widget.cover_controls : ['buttons', 'slider'];
-      const showButtons = controls.includes('buttons');
-      const showSlider = controls.includes('slider');
-      const showPresets = controls.includes('presets');
-      const showTilt = controls.includes('tilt');
+      // Ordered granular items (cover_items). Fall back to expanding legacy
+      // cover_controls groups, else a representative auto-detect hint.
+      const expandGroups = (groups) => {
+        const o = [];
+        for (const g of groups || []) {
+          if (g === 'buttons') o.push('open', 'stop', 'close');
+          else if (g === 'slider') o.push('position');
+          else if (g === 'presets') o.push('presets');
+          else if (g === 'tilt') o.push('tilt_open', 'tilt_close', 'tilt_slider');
+        }
+        return o;
+      };
+      const items = (Array.isArray(widget.cover_items) && widget.cover_items.length) ? widget.cover_items
+        : (Array.isArray(widget.cover_controls) && widget.cover_controls.length) ? expandGroups(widget.cover_controls)
+        : ['open', 'stop', 'close', 'position'];
       const layoutMode = widget.cover_layout || 'auto';
-      const horiz = layoutMode === 'horizontal' ? true
-        : layoutMode === 'vertical' ? false
-        : (tileW >= tileH);
+      const horiz = layoutMode === 'horizontal' ? true : layoutMode === 'vertical' ? false : (tileW >= tileH);
       const presets = (Array.isArray(widget.position_presets) && widget.position_presets.length)
         ? widget.position_presets : [0, 25, 75, 100];
 
       const titleH = widget.label ? 16 : 0;
       const statusH = Math.max(20, Math.min((IH - titleH) * 0.28, 50));
+      const BTN = { open: '▲', close: '▼', stop: '■' };
+      const isBtn = (t) => t in BTN || t === 'tilt_open' || t === 'tilt_close';
 
       const Slat = ({ open }) => (
         <svg width="20" height="16" viewBox="0 0 20 16" style={{ display: 'block' }}>
@@ -620,24 +627,35 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
       const Pill = ({ children, extra }) => (
         <div style={{ background: 'rgba(255,255,255,0.10)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cfcfcf', fontWeight: 'bold', ...extra }}>{children}</div>
       );
-      const HBar = ({ pct = 60 }) => (
-        <div style={{ width: '100%', height: 5, background: 'rgba(255,255,255,0.12)', borderRadius: 4 }}>
-          <div style={{ width: `${pct}%`, height: '100%', background: 'rgba(255,255,255,0.45)', borderRadius: 4 }} />
-        </div>
-      );
+      const btnContent = (t) => t === 'tilt_open' ? <Slat open /> : t === 'tilt_close' ? <Slat /> : BTN[t];
       const VBar = ({ pct = 60 }) => (
         <div style={{ width: 6, height: '100%', background: 'rgba(255,255,255,0.12)', borderRadius: 4, position: 'relative' }}>
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${pct}%`, background: 'rgba(255,255,255,0.45)', borderRadius: 4 }} />
         </div>
       );
-      const presetRow = (
-        <div style={{ display: 'flex', gap: 3, flexShrink: 0, height: 20 }}>
+      const presetRow = (key) => (
+        <div key={key} style={{ display: 'flex', gap: 3, flexShrink: 0, height: 20 }}>
           {presets.slice(0, 6).map((p, i) => (
             <Pill key={i} extra={{ flex: 1, fontSize: 9, fontWeight: 'normal', borderRadius: 10, color: '#bbb' }}>{p}%</Pill>
           ))}
         </div>
       );
-      const mainTxts = ['▲', '■', '▼'];
+
+      // Build horizontal rows: consecutive buttons merge; sliders/presets own rows.
+      const rows = [];
+      let acc = [];
+      const flush = () => { if (acc.length) { rows.push({ kind: 'buttons', toks: acc }); acc = []; } };
+      for (const t of items) {
+        if (isBtn(t)) { acc.push(t); continue; }
+        flush();
+        if (t === 'position' || t === 'tilt_slider') rows.push({ kind: 'slider', tilt: t === 'tilt_slider' });
+        else if (t === 'presets') rows.push({ kind: 'presets' });
+      }
+      flush();
+
+      const sliderToks = items.filter((t) => t === 'position' || t === 'tilt_slider');
+      const btnToks = items.filter(isBtn);
+      const hasPresets = items.includes('presets');
 
       return (
         <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', padding: '4px 6px', boxSizing: 'border-box', gap: 4 }}>
@@ -647,36 +665,34 @@ export default function WidgetPreview({ widget, tileW, tileH }) {
           </div>
           <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
             {horiz ? (
-              <>
-                {showSlider && <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}><HBar /></div>}
-                {showPresets && presetRow}
-                {showTilt && (
-                  <div style={{ flex: 1, display: 'flex', gap: 4 }}>
-                    <Pill extra={{ width: 34 }}><Slat open /></Pill>
-                    <Pill extra={{ width: 34 }}><Slat /></Pill>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}><HBar pct={40} /></div>
+              rows.map((row, i) => {
+                if (row.kind === 'presets') return presetRow(i);
+                if (row.kind === 'slider') return (
+                  <div key={i} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                    <div style={{ width: '100%', height: 5, background: 'rgba(255,255,255,0.12)', borderRadius: 4 }}>
+                      <div style={{ width: row.tilt ? '40%' : '60%', height: '100%', background: 'rgba(255,255,255,0.45)', borderRadius: 4 }} />
+                    </div>
                   </div>
-                )}
-                {showButtons && (
-                  <div style={{ flex: 1, display: 'flex', gap: 4 }}>
-                    {mainTxts.map((t, i) => <Pill key={i} extra={{ flex: 1, fontSize: 14 }}>{t}</Pill>)}
+                );
+                return (
+                  <div key={i} style={{ flex: 1, display: 'flex', gap: 4 }}>
+                    {row.toks.map((t, j) => <Pill key={j} extra={{ flex: 1, fontSize: 14 }}>{btnContent(t)}</Pill>)}
                   </div>
-                )}
-              </>
+                );
+              })
             ) : (
               <>
                 <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 5 }}>
-                  {showSlider && <div style={{ width: 18, display: 'flex', justifyContent: 'center' }}><VBar /></div>}
-                  {showTilt && <div style={{ width: 18, display: 'flex', justifyContent: 'center' }}><VBar pct={40} /></div>}
-                  {(showButtons || showTilt) && (
+                  {sliderToks.map((t, i) => (
+                    <div key={i} style={{ width: 18, display: 'flex', justifyContent: 'center' }}><VBar pct={t === 'tilt_slider' ? 40 : 60} /></div>
+                  ))}
+                  {btnToks.length > 0 && (
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {showButtons && mainTxts.map((t, i) => <Pill key={i} extra={{ flex: 1, fontSize: 14 }}>{t}</Pill>)}
-                      {showTilt && <Pill extra={{ flex: 1 }}><Slat open /></Pill>}
-                      {showTilt && <Pill extra={{ flex: 1 }}><Slat /></Pill>}
+                      {btnToks.map((t, i) => <Pill key={i} extra={{ flex: 1, fontSize: 14 }}>{btnContent(t)}</Pill>)}
                     </div>
                   )}
                 </div>
-                {showPresets && presetRow}
+                {hasPresets && presetRow('presets')}
               </>
             )}
           </div>
