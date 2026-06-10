@@ -57,7 +57,7 @@ export default function CommonFields({ widget, onChange }) {
         ))}
       </div>
 
-      {(widget.type === 'light' || widget.type === 'switch' || widget.type === 'button' || widget.type === 'scene') && (
+      {(widget.type === 'light' || widget.type === 'switch' || widget.type === 'button' || widget.type === 'scene' || widget.type === 'cover') && (
         <Field label="Protected">
           <input
             type="checkbox"

@@ -173,6 +173,15 @@ export const WIDGET_TYPES = [
     format: true,
     extra: [],
   },
+  {
+    type: 'cover',
+    label: 'Cover',
+    icon: '🪟',
+    description: 'Blinds, shades, or garage doors — open/close/stop, position and tilt; controls adapt to the entity',
+    fields: ['entity_id', 'label', 'protected', 'format'],
+    format: true,
+    extra: [],
+  },
 ];
 
 // Common format fields for all widgets
